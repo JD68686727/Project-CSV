@@ -1,5 +1,5 @@
 import type { Dataset } from '@/types/dataset';
-import type { Aggregation, ChartType } from '@/types/chart';
+import type { Aggregation, ChartType, DateBucket } from '@/types/chart';
 import { cn } from '@/utils/cn';
 import type { UseChartConfig } from '../hooks/useChartConfig';
 import { ChartView } from './ChartView';
@@ -21,6 +21,14 @@ const AGGREGATIONS: { value: Aggregation; label: string }[] = [
   { value: 'max', label: 'Max' },
 ];
 
+const BUCKETS: { value: DateBucket; label: string }[] = [
+  { value: 'none', label: 'No bucket' },
+  { value: 'hour', label: 'By hour' },
+  { value: 'day', label: 'By day' },
+  { value: 'week', label: 'By week' },
+  { value: 'month', label: 'By month' },
+];
+
 export interface ChartPanelProps {
   dataset: Dataset;
   /** Chart state owned by the orchestrator (shared with presets). */
@@ -36,10 +44,13 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
     setDimension,
     setMeasure,
     setAggregation,
+    setBucket,
   } = chart;
 
   const measureDisabled = config.aggregation === 'count';
   const noNumeric = numericColumns.length === 0;
+  const dimensionIsDate =
+    dataset.columns[dataset.columnIndex[config.dimensionKey]]?.type === 'date';
   const measureCol =
     config.measureKey != null
       ? dataset.columns[dataset.columnIndex[config.measureKey]]
@@ -86,6 +97,21 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
               </option>
             ))}
           </select>
+
+          {dimensionIsDate && (
+            <select
+              aria-label="Date bucket"
+              value={config.bucket ?? 'none'}
+              onChange={(e) => setBucket(e.target.value as DateBucket)}
+              className={selectCls}
+            >
+              {BUCKETS.map((b) => (
+                <option key={b.value} value={b.value}>
+                  {b.label}
+                </option>
+              ))}
+            </select>
+          )}
 
           <select
             aria-label="Aggregation"

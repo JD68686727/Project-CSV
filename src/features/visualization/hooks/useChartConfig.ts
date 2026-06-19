@@ -1,6 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { ColumnSchema, Dataset } from '@/types/dataset';
-import type { Aggregation, ChartConfig, ChartResult, ChartType } from '@/types/chart';
+import type {
+  Aggregation,
+  ChartConfig,
+  ChartResult,
+  ChartType,
+  DateBucket,
+} from '@/types/chart';
 import { aggregate } from '@/lib/chart/aggregate';
 
 function defaultConfig(dataset: Dataset): ChartConfig {
@@ -9,6 +15,7 @@ function defaultConfig(dataset: Dataset): ChartConfig {
     dimensionKey: dataset.columns[0]?.key ?? '',
     measureKey: null,
     aggregation: 'count',
+    bucket: 'none',
   };
 }
 
@@ -21,6 +28,7 @@ export interface UseChartConfig {
   setDimension: (key: string) => void;
   setMeasure: (key: string) => void;
   setAggregation: (agg: Aggregation) => void;
+  setBucket: (bucket: DateBucket) => void;
   /** Replaces the whole config (e.g. applying a saved preset). */
   applyConfig: (config: ChartConfig) => void;
 }
@@ -58,6 +66,11 @@ export function useChartConfig(dataset: Dataset, order: number[]): UseChartConfi
     [numericColumns],
   );
 
+  const setBucket = useCallback(
+    (bucket: DateBucket) => setConfig((p) => ({ ...p, bucket })),
+    [],
+  );
+
   const applyConfig = useCallback((next: ChartConfig) => setConfig(next), []);
 
   const result = useMemo(
@@ -73,6 +86,7 @@ export function useChartConfig(dataset: Dataset, order: number[]): UseChartConfi
     setDimension,
     setMeasure,
     setAggregation,
+    setBucket,
     applyConfig,
   };
 }

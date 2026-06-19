@@ -1,5 +1,6 @@
 import type { Dataset } from '@/types/dataset';
 import type { ChartConfig, ChartDatum, ChartResult, ChartType } from '@/types/chart';
+import { bucketDate } from './dateBucket';
 
 /** Max categories rendered per chart type before truncation. */
 const CAPS: Record<ChartType, number> = { bar: 40, line: 100, pie: 8 };
@@ -32,12 +33,21 @@ export function aggregate(
     config.measureKey != null ? dataset.columnIndex[config.measureKey] : undefined;
   const { rows } = dataset;
 
+  // Bucketing only applies to date dimensions; older presets may omit `bucket`.
+  const bucket = config.bucket ?? 'none';
+  const useBucket = dataset.columns[dimIdx].type === 'date' && bucket !== 'none';
+
   const groups = new Map<string, GroupAcc>();
 
   for (const rowIdx of order) {
     const row = rows[rowIdx];
     const dimCell = row[dimIdx];
-    const name = dimCell == null ? '(empty)' : String(dimCell);
+    const name =
+      dimCell == null
+        ? '(empty)'
+        : useBucket
+          ? bucketDate(String(dimCell), bucket)
+          : String(dimCell);
 
     let g = groups.get(name);
     if (!g) {
