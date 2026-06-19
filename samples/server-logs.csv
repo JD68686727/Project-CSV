@@ -1,0 +1,16 @@
+timestamp,level,status_code,latency_ms,endpoint,cached,client_ip
+2026-06-19T08:01:12,INFO,200,42,/api/users,true,10.0.0.4
+2026-06-19T08:01:13,INFO,200,18,/api/users/12,true,10.0.0.7
+2026-06-19T08:01:15,WARN,404,5,/api/orders/999,false,10.0.0.4
+2026-06-19T08:01:16,INFO,200,210,/api/reports,false,10.0.0.9
+2026-06-19T08:01:19,ERROR,500,1203,/api/reports/export,false,10.0.0.9
+2026-06-19T08:01:21,INFO,201,88,/api/orders,false,10.0.0.2
+2026-06-19T08:01:24,INFO,200,12,/api/health,true,10.0.0.1
+2026-06-19T08:01:27,WARN,429,3,/api/users,false,10.0.0.13
+2026-06-19T08:01:31,ERROR,503,2400,/api/payments,false,10.0.0.5
+2026-06-19T08:01:35,INFO,200,64,/api/users/8,true,10.0.0.7
+2026-06-19T08:01:39,INFO,304,9,/api/static/logo,true,10.0.0.2
+2026-06-19T08:01:42,WARN,401,6,/api/admin,false,10.0.0.21
+2026-06-19T08:01:45,INFO,200,150,/api/search,false,10.0.0.9
+2026-06-19T08:01:48,ERROR,500,980,/api/search,false,10.0.0.9
+2026-06-19T08:01:52,INFO,200,33,/api/users,true,10.0.0.4
