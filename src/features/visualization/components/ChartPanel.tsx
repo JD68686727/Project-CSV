@@ -1,7 +1,7 @@
 import type { Dataset } from '@/types/dataset';
 import type { Aggregation, ChartType } from '@/types/chart';
 import { cn } from '@/utils/cn';
-import { useChartConfig } from '../hooks/useChartConfig';
+import type { UseChartConfig } from '../hooks/useChartConfig';
 import { ChartView } from './ChartView';
 
 const selectCls =
@@ -23,11 +23,11 @@ const AGGREGATIONS: { value: Aggregation; label: string }[] = [
 
 export interface ChartPanelProps {
   dataset: Dataset;
-  /** Filtered row indices to aggregate (sorting doesn't affect aggregation). */
-  order: number[];
+  /** Chart state owned by the orchestrator (shared with presets). */
+  chart: UseChartConfig;
 }
 
-export function ChartPanel({ dataset, order }: ChartPanelProps) {
+export function ChartPanel({ dataset, chart }: ChartPanelProps) {
   const {
     config,
     numericColumns,
@@ -36,7 +36,7 @@ export function ChartPanel({ dataset, order }: ChartPanelProps) {
     setDimension,
     setMeasure,
     setAggregation,
-  } = useChartConfig(dataset, order);
+  } = chart;
 
   const measureDisabled = config.aggregation === 'count';
   const noNumeric = numericColumns.length === 0;

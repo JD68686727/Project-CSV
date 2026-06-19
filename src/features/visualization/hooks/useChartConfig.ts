@@ -21,6 +21,8 @@ export interface UseChartConfig {
   setDimension: (key: string) => void;
   setMeasure: (key: string) => void;
   setAggregation: (agg: Aggregation) => void;
+  /** Replaces the whole config (e.g. applying a saved preset). */
+  applyConfig: (config: ChartConfig) => void;
 }
 
 export function useChartConfig(dataset: Dataset, order: number[]): UseChartConfig {
@@ -56,6 +58,8 @@ export function useChartConfig(dataset: Dataset, order: number[]): UseChartConfi
     [numericColumns],
   );
 
+  const applyConfig = useCallback((next: ChartConfig) => setConfig(next), []);
+
   const result = useMemo(
     () => aggregate(dataset, order, config),
     [dataset, order, config],
@@ -69,5 +73,6 @@ export function useChartConfig(dataset: Dataset, order: number[]): UseChartConfi
     setDimension,
     setMeasure,
     setAggregation,
+    applyConfig,
   };
 }
