@@ -1,4 +1,5 @@
 import type { CellValue, ColumnType } from '@/types/dataset';
+import { formatNumber } from '@/utils/formatNumber';
 
 export interface FormattedCell {
   text: string;
@@ -17,7 +18,7 @@ export function formatCell(value: CellValue, type: ColumnType): FormattedCell {
   switch (type) {
     case 'number':
       return {
-        text: typeof value === 'number' ? value.toLocaleString() : String(value),
+        text: typeof value === 'number' ? formatNumber(value) : String(value),
         align: 'right',
         muted: false,
       };

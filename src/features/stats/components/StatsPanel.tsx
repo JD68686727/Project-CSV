@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Dataset, ColumnType } from '@/types/dataset';
 import { cn } from '@/utils/cn';
+import { formatNumber as fmt } from '@/utils/formatNumber';
 import { useColumnStats } from '../hooks/useColumnStats';
 
 const TYPE_BADGE: Record<ColumnType, string> = {
@@ -9,9 +10,6 @@ const TYPE_BADGE: Record<ColumnType, string> = {
   boolean: 'bg-amber-100 text-amber-700',
   date: 'bg-violet-100 text-violet-700',
 };
-
-const fmt = (n: number) =>
-  n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 export interface StatsPanelProps {
   dataset: Dataset;

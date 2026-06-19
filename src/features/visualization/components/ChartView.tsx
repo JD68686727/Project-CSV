@@ -15,6 +15,7 @@ import {
   YAxis,
 } from 'recharts';
 import type { ChartDatum, ChartType } from '@/types/chart';
+import { formatNumber } from '@/utils/formatNumber';
 
 const COLORS = [
   '#6366f1',
@@ -29,10 +30,9 @@ const COLORS = [
 
 const AXIS_TICK = { fontSize: 11, fill: '#64748b' };
 
-function formatNumber(value: unknown): string {
-  const n = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(n)) return '—';
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+/** Coerces Recharts' ValueType (number | string | array) before formatting. */
+function formatTooltip(value: unknown): string {
+  return formatNumber(typeof value === 'number' ? value : Number(value));
 }
 
 export interface ChartViewProps {
@@ -53,7 +53,7 @@ function renderChart(
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis dataKey="name" tick={AXIS_TICK} interval="preserveStartEnd" />
         <YAxis tick={AXIS_TICK} width={48} />
-        <Tooltip formatter={(value) => [formatNumber(value), valueLabel]} />
+        <Tooltip formatter={(value) => [formatTooltip(value), valueLabel]} />
         <Line
           type="monotone"
           dataKey="value"
@@ -69,7 +69,7 @@ function renderChart(
   if (type === 'pie') {
     return (
       <PieChart>
-        <Tooltip formatter={(value) => [formatNumber(value), valueLabel]} />
+        <Tooltip formatter={(value) => [formatTooltip(value), valueLabel]} />
         <Legend />
         <Pie
           data={data}
@@ -93,7 +93,7 @@ function renderChart(
       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
       <XAxis dataKey="name" tick={AXIS_TICK} interval="preserveStartEnd" />
       <YAxis tick={AXIS_TICK} width={48} />
-      <Tooltip formatter={(value) => [formatNumber(value), valueLabel]} />
+      <Tooltip formatter={(value) => [formatTooltip(value), valueLabel]} />
       <Bar dataKey="value" name={valueLabel} fill="#6366f1" radius={[4, 4, 0, 0]} />
     </BarChart>
   );
