@@ -6,6 +6,7 @@ import { DropZone } from '@/features/ingestion/components/DropZone';
 import { ParseStatus } from '@/features/ingestion/components/ParseStatus';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
+import { useSharedView } from '@/features/sharing/hooks/useSharedView';
 import { ChartSkeleton } from '@/components/ChartSkeleton';
 import { DataWorkspace } from './DataWorkspace';
 
@@ -18,6 +19,7 @@ const CompareView = lazy(() =>
 export function App() {
   const { status, dataset, errors, progress, parseFile, reset } = useLogParser();
   const ws = useWorkspace();
+  const shared = useSharedView();
   const [mode, setMode] = useState<WorkspaceMode>('analyze');
   const lastAddedRef = useRef<Dataset | null>(null);
   const { addDataset } = ws;
@@ -94,6 +96,8 @@ export function App() {
               <DataWorkspace
                 key={ws.activeFile.id}
                 dataset={ws.activeFile.dataset}
+                pending={shared.pending}
+                onConsumePending={shared.consume}
               />
             )}
 

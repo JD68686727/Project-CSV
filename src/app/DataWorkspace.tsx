@@ -1,6 +1,7 @@
-import { lazy, Suspense, useCallback } from 'react';
+import { lazy, Suspense, useCallback, useEffect } from 'react';
 import type { Dataset } from '@/types/dataset';
 import type { SavedView } from '@/types/view';
+import type { ViewState } from '@/types/share';
 import { useFilters } from '@/features/filtering/hooks/useFilters';
 import { FilterBar } from '@/features/filtering/components/FilterBar';
 import { useSortedRows } from '@/features/table/hooks/useSortedRows';
@@ -8,6 +9,7 @@ import { DataTable } from '@/features/table/components/DataTable';
 import { useColumnView } from '@/features/table/hooks/useColumnView';
 import { ColumnManager } from '@/features/table/components/ColumnManager';
 import { ExportButton } from '@/features/export/components/ExportButton';
+import { ShareButton } from '@/features/sharing/components/ShareButton';
 import { StatsPanel } from '@/features/stats/components/StatsPanel';
 import { useChartConfig } from '@/features/visualization/hooks/useChartConfig';
 import { usePresets } from '@/features/presets/hooks/usePresets';
@@ -25,6 +27,9 @@ const ChartPanel = lazy(() =>
 
 export interface DataWorkspaceProps {
   dataset: Dataset;
+  /** A view from a shared link, applied once after this mounts. */
+  pending: ViewState | null;
+  onConsumePending: () => void;
 }
 
 /**
@@ -34,16 +39,54 @@ export interface DataWorkspaceProps {
  * works on index arrays, so a 50k-row dataset is never copied. Mounted with a
  * `key` tied to the dataset in App, so a new file gets fresh state for free.
  */
-export function DataWorkspace({ dataset }: DataWorkspaceProps) {
+export function DataWorkspace({
+  dataset,
+  pending,
+  onConsumePending,
+}: DataWorkspaceProps) {
   const filtersApi = useFilters(dataset);
   const chart = useChartConfig(dataset, filtersApi.filteredOrder);
   const columnView = useColumnView(dataset);
   const presets = usePresets(dataset);
-  const { order, sort, toggleSort } = useSortedRows(dataset, filtersApi.filteredOrder);
+  const { order, sort, toggleSort, setSort } = useSortedRows(
+    dataset,
+    filtersApi.filteredOrder,
+  );
 
-  const { replaceFilters, filters, filteredOrder, query } = filtersApi;
+  const { replaceFilters, filters, filteredOrder, query, setQuery } = filtersApi;
   const { applyConfig, config: chartConfig } = chart;
   const { applyView, view: columnViewState, visible: visibleColumns } = columnView;
+
+  // The shareable view, built only when the Share button is clicked.
+  const getView = useCallback(
+    (): ViewState => ({
+      filters,
+      query,
+      sort,
+      chart: chartConfig,
+      columns: columnViewState,
+    }),
+    [filters, query, sort, chartConfig, columnViewState],
+  );
+
+  // Apply a view from a shared link once, now that the dataset exists.
+  useEffect(() => {
+    if (!pending) return;
+    replaceFilters(pending.filters);
+    setQuery(pending.query);
+    setSort(pending.sort);
+    applyConfig(pending.chart);
+    applyView(pending.columns);
+    onConsumePending();
+  }, [
+    pending,
+    replaceFilters,
+    setQuery,
+    setSort,
+    applyConfig,
+    applyView,
+    onConsumePending,
+  ]);
 
   const handleApply = useCallback(
     (view: SavedView) => {
@@ -90,11 +133,14 @@ export function DataWorkspace({ dataset }: DataWorkspaceProps) {
           onShowAll={columnView.showAll}
           onReset={columnView.reset}
         />
-        <ExportButton
-          dataset={dataset}
-          order={order}
-          columns={visibleColumns}
-        />
+        <div className="flex items-center gap-2">
+          <ShareButton getView={getView} />
+          <ExportButton
+            dataset={dataset}
+            order={order}
+            columns={visibleColumns}
+          />
+        </div>
       </div>
 
       <StatsPanel dataset={dataset} order={filteredOrder} />
