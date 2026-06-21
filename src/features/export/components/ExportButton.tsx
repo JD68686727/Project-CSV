@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { Dataset } from '@/types/dataset';
+import type { ColumnSchema, Dataset } from '@/types/dataset';
 import { datasetToCsv } from '@/lib/csv/exportCsv';
 import { downloadBlob } from '@/utils/downloadBlob';
 
@@ -14,13 +14,15 @@ export interface ExportButtonProps {
   dataset: Dataset;
   /** Filtered + sorted row indices — export mirrors the on-screen view. */
   order: number[];
+  /** Visible columns (ordered) — export mirrors the visible table. */
+  columns: ColumnSchema[];
 }
 
-export function ExportButton({ dataset, order }: ExportButtonProps) {
+export function ExportButton({ dataset, order, columns }: ExportButtonProps) {
   const handleExport = useCallback(() => {
-    const csv = datasetToCsv(dataset, order);
+    const csv = datasetToCsv(dataset, order, columns);
     downloadBlob(exportName(dataset.meta.fileName), csv);
-  }, [dataset, order]);
+  }, [dataset, order, columns]);
 
   return (
     <button

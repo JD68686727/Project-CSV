@@ -40,6 +40,22 @@ test('search: grep across all columns narrows the table', async ({ page }) => {
   await expect(page.getByText('15 of 15 rows')).toBeVisible();
 });
 
+test('columns: hiding a column removes it from the table', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', CSV1);
+  // The "cached" column header is present initially.
+  await expect(page.getByRole('button', { name: 'cached', exact: true })).toBeVisible();
+
+  // Open the column manager and hide "cached".
+  await page.getByRole('button', { name: /Columns/ }).click();
+  await page.getByRole('checkbox', { name: 'cached' }).uncheck();
+
+  // The header for that column is gone from the table.
+  await expect(
+    page.getByRole('button', { name: 'cached', exact: true }),
+  ).toHaveCount(0);
+});
+
 test('compare: overlay trends across two files', async ({ page }) => {
   await page.goto('/');
 

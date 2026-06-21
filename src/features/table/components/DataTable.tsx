@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { Dataset } from '@/types/dataset';
+import type { ColumnSchema, Dataset } from '@/types/dataset';
 import { cn } from '@/utils/cn';
 import type { SortDirection, SortState } from '../hooks/useSortedRows';
 import { formatCell } from '../utils/formatCell';
@@ -11,6 +11,8 @@ const GUTTER_WIDTH = 64;
 
 export interface DataTableProps {
   dataset: Dataset;
+  /** Visible columns in display order (controls which/what-order to render). */
+  columns: ColumnSchema[];
   /** Row indices into `dataset.rows`, in display order (filtered + sorted). */
   order: number[];
   sort: SortState | null;
@@ -31,7 +33,13 @@ function SortIcon({ direction }: { direction: SortDirection | null }) {
  * DOM nodes. Header and body share one `gridTemplateColumns` so columns stay
  * aligned while the single scroll container handles both axes.
  */
-export function DataTable({ dataset, order, sort, onToggleSort }: DataTableProps) {
+export function DataTable({
+  dataset,
+  columns,
+  order,
+  sort,
+  onToggleSort,
+}: DataTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -41,7 +49,7 @@ export function DataTable({ dataset, order, sort, onToggleSort }: DataTableProps
     overscan: 12,
   });
 
-  const gridTemplate = `${GUTTER_WIDTH}px repeat(${dataset.columns.length}, ${COLUMN_WIDTH}px)`;
+  const gridTemplate = `${GUTTER_WIDTH}px repeat(${columns.length}, ${COLUMN_WIDTH}px)`;
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -54,7 +62,7 @@ export function DataTable({ dataset, order, sort, onToggleSort }: DataTableProps
           <div className="flex items-center justify-end px-3 py-2 text-slate-400">
             #
           </div>
-          {dataset.columns.map((col) => {
+          {columns.map((col) => {
             const active = sort?.columnKey === col.key;
             return (
               <button
@@ -99,8 +107,8 @@ export function DataTable({ dataset, order, sort, onToggleSort }: DataTableProps
                 <div className="flex items-center justify-end px-3 font-mono text-xs text-slate-400">
                   {rowIdx + 1}
                 </div>
-                {dataset.columns.map((col, c) => {
-                  const cell = formatCell(row[c], col.type);
+                {columns.map((col) => {
+                  const cell = formatCell(row[dataset.columnIndex[col.key]], col.type);
                   return (
                     <div
                       key={col.key}

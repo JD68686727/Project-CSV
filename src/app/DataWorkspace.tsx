@@ -5,6 +5,8 @@ import { useFilters } from '@/features/filtering/hooks/useFilters';
 import { FilterBar } from '@/features/filtering/components/FilterBar';
 import { useSortedRows } from '@/features/table/hooks/useSortedRows';
 import { DataTable } from '@/features/table/components/DataTable';
+import { useColumnView } from '@/features/table/hooks/useColumnView';
+import { ColumnManager } from '@/features/table/components/ColumnManager';
 import { ExportButton } from '@/features/export/components/ExportButton';
 import { StatsPanel } from '@/features/stats/components/StatsPanel';
 import { useChartConfig } from '@/features/visualization/hooks/useChartConfig';
@@ -35,23 +37,27 @@ export interface DataWorkspaceProps {
 export function DataWorkspace({ dataset }: DataWorkspaceProps) {
   const filtersApi = useFilters(dataset);
   const chart = useChartConfig(dataset, filtersApi.filteredOrder);
+  const columnView = useColumnView(dataset);
   const presets = usePresets(dataset);
   const { order, sort, toggleSort } = useSortedRows(dataset, filtersApi.filteredOrder);
 
   const { replaceFilters, filters, filteredOrder, query } = filtersApi;
   const { applyConfig, config: chartConfig } = chart;
+  const { applyView, view: columnViewState, visible: visibleColumns } = columnView;
 
   const handleApply = useCallback(
     (view: SavedView) => {
       replaceFilters(view.filters);
       applyConfig(view.chart);
+      if (view.columns) applyView(view.columns);
     },
-    [replaceFilters, applyConfig],
+    [replaceFilters, applyConfig, applyView],
   );
 
   const handleSave = useCallback(
-    (name: string) => presets.savePreset(name, filters, chartConfig),
-    [presets, filters, chartConfig],
+    (name: string) =>
+      presets.savePreset(name, filters, chartConfig, columnViewState),
+    [presets, filters, chartConfig, columnViewState],
   );
 
   return (
@@ -76,14 +82,26 @@ export function DataWorkspace({ dataset }: DataWorkspaceProps) {
         totalCount={dataset.rows.length}
       />
 
-      <div className="flex items-center justify-end">
-        <ExportButton dataset={dataset} order={order} />
+      <div className="flex items-center justify-between gap-2">
+        <ColumnManager
+          items={columnView.items}
+          onToggle={columnView.toggle}
+          onMove={columnView.move}
+          onShowAll={columnView.showAll}
+          onReset={columnView.reset}
+        />
+        <ExportButton
+          dataset={dataset}
+          order={order}
+          columns={visibleColumns}
+        />
       </div>
 
       <StatsPanel dataset={dataset} order={filteredOrder} />
 
       <DataTable
         dataset={dataset}
+        columns={visibleColumns}
         order={order}
         sort={sort}
         onToggleSort={toggleSort}
