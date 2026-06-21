@@ -26,6 +26,20 @@ test('analyze: load a file, filter it, and chart it', async ({ page }) => {
   await expect(page.locator('.recharts-bar-rectangle').first()).toBeVisible();
 });
 
+test('search: grep across all columns narrows the table', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', CSV1);
+  await expect(page.getByText('15 of 15 rows')).toBeVisible();
+
+  // Only one row mentions "payments" (the /api/payments endpoint).
+  await page.fill('input[aria-label="Search all columns"]', 'payments');
+  await expect(page.getByText('1 of 15 rows')).toBeVisible();
+
+  // Clearing the search restores the full set.
+  await page.getByRole('button', { name: 'Clear search' }).click();
+  await expect(page.getByText('15 of 15 rows')).toBeVisible();
+});
+
 test('compare: overlay trends across two files', async ({ page }) => {
   await page.goto('/');
 

@@ -38,7 +38,7 @@ export function DataWorkspace({ dataset }: DataWorkspaceProps) {
   const presets = usePresets(dataset);
   const { order, sort, toggleSort } = useSortedRows(dataset, filtersApi.filteredOrder);
 
-  const { replaceFilters, filters, filteredOrder } = filtersApi;
+  const { replaceFilters, filters, filteredOrder, query } = filtersApi;
   const { applyConfig, config: chartConfig } = chart;
 
   const handleApply = useCallback(
@@ -70,6 +70,8 @@ export function DataWorkspace({ dataset }: DataWorkspaceProps) {
         onUpdate={filtersApi.updateFilter}
         onRemove={filtersApi.removeFilter}
         onClear={filtersApi.clearFilters}
+        query={query}
+        onQueryChange={filtersApi.setQuery}
         resultCount={filteredOrder.length}
         totalCount={dataset.rows.length}
       />

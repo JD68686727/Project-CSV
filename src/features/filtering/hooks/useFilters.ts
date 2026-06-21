@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import type { Dataset } from '@/types/dataset';
 import type { ColumnFilter } from '@/types/filter';
 import { applyFilters } from '@/lib/filter/applyFilters';
+import { applyQuickSearch } from '@/lib/filter/quickSearch';
 import { operatorsForType } from '@/lib/filter/operators';
 
 let idCounter = 0;
@@ -15,12 +16,19 @@ export interface UseFilters {
   clearFilters: () => void;
   /** Replaces all filters (e.g. applying a saved preset), with fresh ids. */
   replaceFilters: (filters: ColumnFilter[]) => void;
-  /** Row indices passing all filters (AND). Memoized. */
+  /** Free-text "search across all columns" query (immediate, for the input). */
+  query: string;
+  setQuery: (query: string) => void;
+  /** Row indices passing all structured filters AND the search. Memoized. */
   filteredOrder: number[];
 }
 
 export function useFilters(dataset: Dataset | null): UseFilters {
   const [filters, setFilters] = useState<ColumnFilter[]>([]);
+  const [query, setQuery] = useState('');
+  // Keep typing responsive on large files: the heavy re-filter uses a deferred
+  // copy of the query so React can prioritise the input over recomputation.
+  const deferredQuery = useDeferredValue(query);
 
   const addFilter = useCallback(() => {
     if (!dataset || dataset.columns.length === 0) return;
@@ -49,8 +57,11 @@ export function useFilters(dataset: Dataset | null): UseFilters {
 
   const filteredOrder = useMemo(() => {
     if (!dataset) return [];
-    return applyFilters(dataset, filters);
-  }, [dataset, filters]);
+    // Structured filters first (cheap predicates), then the cross-column search
+    // on the survivors only.
+    const structured = applyFilters(dataset, filters);
+    return applyQuickSearch(dataset, structured, deferredQuery);
+  }, [dataset, filters, deferredQuery]);
 
   return {
     filters,
@@ -59,6 +70,8 @@ export function useFilters(dataset: Dataset | null): UseFilters {
     removeFilter,
     clearFilters,
     replaceFilters,
+    query,
+    setQuery,
     filteredOrder,
   };
 }
