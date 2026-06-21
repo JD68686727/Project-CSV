@@ -14,20 +14,36 @@ interface GroupAcc {
   numCount: number;
 }
 
+function reduceGroup(g: GroupAcc, aggregation: ChartConfig['aggregation']): number {
+  switch (aggregation) {
+    case 'sum':
+      return g.sum;
+    case 'avg':
+      return g.numCount > 0 ? g.sum / g.numCount : 0;
+    case 'min':
+      return g.numCount > 0 ? g.min : 0;
+    case 'max':
+      return g.numCount > 0 ? g.max : 0;
+    case 'count':
+    default:
+      return g.count;
+  }
+}
+
 /**
- * Groups the rows referenced by `order` (the current filtered view) by the
- * dimension column and reduces each group to a single value per the chosen
- * aggregation. Single O(rows) pass; operates on the index array so no row data
- * is copied. Results are ordered (value-desc for bar/pie, name-asc for line)
- * and capped per chart type.
+ * Groups the rows referenced by `order` by the dimension column and reduces
+ * each group to a single value per the chosen aggregation. Returns a raw
+ * `category -> value` map (unsorted, uncapped). Single O(rows) pass over the
+ * index array — no row data copied. Shared by the single-file chart and the
+ * multi-file comparison overlay so their aggregation semantics stay identical.
  */
-export function aggregate(
+export function aggregateToMap(
   dataset: Dataset,
   order: number[],
   config: ChartConfig,
-): ChartResult {
+): Map<string, number> {
   const dimIdx = dataset.columnIndex[config.dimensionKey];
-  if (dimIdx == null) return { data: [], groupCount: 0 };
+  if (dimIdx == null) return new Map();
 
   const measIdx =
     config.measureKey != null ? dataset.columnIndex[config.measureKey] : undefined;
@@ -68,29 +84,25 @@ export function aggregate(
     }
   }
 
-  const data: ChartDatum[] = [];
-  for (const [name, g] of groups) {
-    let value: number;
-    switch (config.aggregation) {
-      case 'sum':
-        value = g.sum;
-        break;
-      case 'avg':
-        value = g.numCount > 0 ? g.sum / g.numCount : 0;
-        break;
-      case 'min':
-        value = g.numCount > 0 ? g.min : 0;
-        break;
-      case 'max':
-        value = g.numCount > 0 ? g.max : 0;
-        break;
-      case 'count':
-      default:
-        value = g.count;
-        break;
-    }
-    data.push({ name, value, count: g.count });
-  }
+  const out = new Map<string, number>();
+  for (const [name, g] of groups) out.set(name, reduceGroup(g, config.aggregation));
+  return out;
+}
+
+/**
+ * Single-series chart data: orders (value-desc for bar/pie, name-asc for line)
+ * and caps per chart type.
+ */
+export function aggregate(
+  dataset: Dataset,
+  order: number[],
+  config: ChartConfig,
+): ChartResult {
+  const map = aggregateToMap(dataset, order, config);
+  const data: ChartDatum[] = [...map.entries()].map(([name, value]) => ({
+    name,
+    value,
+  }));
 
   if (config.type === 'line') {
     data.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
@@ -98,6 +110,5 @@ export function aggregate(
     data.sort((a, b) => b.value - a.value);
   }
 
-  const cap = CAPS[config.type];
-  return { data: data.slice(0, cap), groupCount: groups.size };
+  return { data: data.slice(0, CAPS[config.type]), groupCount: map.size };
 }

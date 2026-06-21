@@ -1,14 +1,37 @@
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import type { Dataset } from '@/types/dataset';
+import type { WorkspaceMode } from '@/types/workspace';
 import { useLogParser } from '@/features/ingestion/hooks/useLogParser';
 import { DropZone } from '@/features/ingestion/components/DropZone';
 import { ParseStatus } from '@/features/ingestion/components/ParseStatus';
+import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
+import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
 import { DataWorkspace } from './DataWorkspace';
+
+const CompareView = lazy(() =>
+  import('@/features/compare/components/CompareView').then((m) => ({
+    default: m.CompareView,
+  })),
+);
 
 export function App() {
   const { status, dataset, errors, progress, parseFile, reset } = useLogParser();
-  const hasData = status === 'success' && dataset !== null;
-  const dataKey = dataset
-    ? `${dataset.meta.fileName}:${dataset.meta.fileSize}:${dataset.meta.rowCount}`
-    : 'none';
+  const ws = useWorkspace();
+  const [mode, setMode] = useState<WorkspaceMode>('analyze');
+  const lastAddedRef = useRef<Dataset | null>(null);
+  const { addDataset } = ws;
+
+  // When a parse completes, move the dataset into the workspace and clear the
+  // parser so it's ready for the next file. The ref guards against re-adding.
+  useEffect(() => {
+    if (status === 'success' && dataset && dataset !== lastAddedRef.current) {
+      lastAddedRef.current = dataset;
+      addDataset(dataset);
+      reset();
+    }
+  }, [status, dataset, addDataset, reset]);
+
+  const hasFiles = ws.files.length > 0;
 
   return (
     <div className="min-h-screen">
@@ -29,17 +52,7 @@ export function App() {
       </header>
 
       <main className="mx-auto max-w-[100rem] px-6 py-8">
-        {hasData ? (
-          <div className="space-y-4">
-            <ParseStatus
-              status={status}
-              dataset={dataset}
-              errors={errors}
-              onClear={reset}
-            />
-            <DataWorkspace key={dataKey} dataset={dataset} />
-          </div>
-        ) : (
+        {!hasFiles ? (
           <div className="py-12">
             <DropZone
               status={status}
@@ -48,10 +61,50 @@ export function App() {
             />
             <ParseStatus
               status={status}
-              dataset={dataset}
+              dataset={null}
               errors={errors}
               onClear={reset}
             />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <WorkspaceBar
+              files={ws.files}
+              activeId={ws.activeFile?.id ?? null}
+              mode={mode}
+              parsing={status === 'parsing'}
+              progress={progress}
+              onSetMode={setMode}
+              onSetActive={ws.setActive}
+              onRemove={ws.removeFile}
+              onAddFile={parseFile}
+            />
+
+            {status === 'error' && (
+              <ParseStatus
+                status="error"
+                dataset={null}
+                errors={errors}
+                onClear={reset}
+              />
+            )}
+
+            {mode === 'analyze' && ws.activeFile && (
+              <DataWorkspace
+                key={ws.activeFile.id}
+                dataset={ws.activeFile.dataset}
+              />
+            )}
+
+            {mode === 'compare' && (
+              <Suspense
+                fallback={
+                  <div className="h-96 animate-pulse rounded-xl border border-slate-200 bg-white" />
+                }
+              >
+                <CompareView files={ws.files} />
+              </Suspense>
+            )}
           </div>
         )}
       </main>

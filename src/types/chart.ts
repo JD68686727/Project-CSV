@@ -21,8 +21,6 @@ export interface ChartDatum {
   name: string;
   /** Aggregated value plotted on the chart. */
   value: number;
-  /** Number of source rows in this group (for context/tooltips). */
-  count: number;
 }
 
 export interface ChartResult {
