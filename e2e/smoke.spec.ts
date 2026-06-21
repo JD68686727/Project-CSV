@@ -56,6 +56,34 @@ test('columns: hiding a column removes it from the table', async ({ page }) => {
   ).toHaveCount(0);
 });
 
+test('share: a link restores the view in a fresh session', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', CSV1);
+
+  // Configure a view: filter status_code >= 500 (3 of 15).
+  await page.getByRole('button', { name: '+ Add filter' }).click();
+  await page.selectOption('select[aria-label="Column"]', 'status_code');
+  await page.selectOption('select[aria-label="Operator"]', 'gte');
+  await page.fill('input[aria-label="Value"]', '500');
+  await expect(page.getByText('3 of 15 rows')).toBeVisible();
+
+  // Share → URL gains a #v= token (clipboard is best-effort).
+  await page.getByRole('button', { name: /Share view/ }).click();
+  await expect(page.getByRole('button', { name: /Link copied/ })).toBeVisible();
+  const url = page.url();
+  expect(url).toContain('#v=');
+
+  // Open the link in a fresh page, load the same file → the filter is restored.
+  const page2 = await context.newPage();
+  await page2.goto(url);
+  await page2.setInputFiles('input[type="file"]', CSV1);
+  await expect(page2.getByText('3 of 15 rows')).toBeVisible();
+  await page2.close();
+});
+
 test('compare: overlay trends across two files', async ({ page }) => {
   await page.goto('/');
 

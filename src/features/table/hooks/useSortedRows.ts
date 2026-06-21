@@ -14,6 +14,8 @@ export interface UseSortedRows {
   sort: SortState | null;
   /** Cycles a column through asc → desc → unsorted. */
   toggleSort: (columnKey: string) => void;
+  /** Sets the sort outright (e.g. restoring a shared/saved view). */
+  setSort: (sort: SortState | null) => void;
 }
 
 /** Comparator for two non-null cells of the same logical column. */
@@ -68,5 +70,5 @@ export function useSortedRows(
     });
   }, [dataset, baseOrder, sort]);
 
-  return { order, sort, toggleSort };
+  return { order, sort, toggleSort, setSort };
 }
