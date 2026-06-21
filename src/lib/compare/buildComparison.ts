@@ -10,20 +10,16 @@ export interface CompareInput {
   /** Unique series label (the file name, de-duplicated by the caller). */
   label: string;
   dataset: Dataset;
-}
-
-function allRowIndices(dataset: Dataset): number[] {
-  const arr = new Array<number>(dataset.rows.length);
-  for (let i = 0; i < arr.length; i++) arr[i] = i;
-  return arr;
+  /** Row indices to aggregate for this file (its per-file filtered subset). */
+  order: number[];
 }
 
 /**
- * Aggregates each file independently by a shared dimension, then aligns the
- * results into one overlay dataset keyed by category — every file becomes a
- * series. Reuses `aggregateToMap` so per-file aggregation matches the single-
- * file chart exactly. Categories are ordered (total-desc for bar, name-asc for
- * line) and capped.
+ * Aggregates each file independently by a shared dimension over its own `order`
+ * (per-file filtered subset), then aligns the results into one overlay dataset
+ * keyed by category — every file becomes a series. Reuses `aggregateToMap` so
+ * per-file aggregation matches the single-file chart exactly. Categories are
+ * ordered (total-desc for bar, name-asc for line) and capped.
  */
 export function buildComparison(
   files: CompareInput[],
@@ -39,7 +35,7 @@ export function buildComparison(
 
   const perFile = files.map((f) => ({
     label: f.label,
-    map: aggregateToMap(f.dataset, allRowIndices(f.dataset), chartConfig),
+    map: aggregateToMap(f.dataset, f.order, chartConfig),
   }));
 
   // Union of categories with their cross-file total (used to order bars).

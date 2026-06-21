@@ -4,6 +4,7 @@ import type { LoadedFile } from '@/types/workspace';
 import { cn } from '@/utils/cn';
 import { useCompareConfig } from '../hooks/useCompareConfig';
 import { CompareChart } from './CompareChart';
+import { CompareFileRow } from './CompareFileRow';
 
 const selectCls =
   'rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20';
@@ -37,6 +38,9 @@ export function CompareView({ files }: CompareViewProps) {
   const {
     files: fileItems,
     toggleFile,
+    addFileFilter,
+    updateFileFilter,
+    removeFileFilter,
     commonCols,
     commonNumeric,
     config,
@@ -70,32 +74,21 @@ export function CompareView({ files }: CompareViewProps) {
 
   return (
     <div className="space-y-3">
-      {/* File toggles */}
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
+      {/* Files — each with its own filter (compare filtered subsets) */}
+      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
         <span className="text-sm font-semibold text-slate-700">Files</span>
-        {fileItems.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            onClick={() => toggleFile(f.id)}
-            aria-pressed={f.included}
-            className={cn(
-              'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm transition-colors',
-              f.included
-                ? 'border-slate-300 bg-white text-slate-700'
-                : 'border-slate-200 bg-slate-50 text-slate-400',
-            )}
-          >
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: f.included ? f.color : '#cbd5e1' }}
+        <div className="space-y-2">
+          {fileItems.map((f) => (
+            <CompareFileRow
+              key={f.id}
+              item={f}
+              onToggle={toggleFile}
+              onAddFilter={addFileFilter}
+              onUpdateFilter={updateFileFilter}
+              onRemoveFilter={removeFileFilter}
             />
-            <span className="font-medium">{f.label}</span>
-            <span className="text-xs text-slate-400">
-              {f.rows.toLocaleString()} rows
-            </span>
-          </button>
-        ))}
+          ))}
+        </div>
       </div>
 
       {noCommon ? (
