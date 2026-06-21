@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Dataset } from '@/types/dataset';
 import type { ChartConfig } from '@/types/chart';
 import type { ColumnFilter } from '@/types/filter';
+import type { ColumnViewItem } from '@/types/table';
 import type { SavedView } from '@/types/view';
 import {
   deleteView,
@@ -15,7 +16,12 @@ const nextId = () => `view-${Date.now()}-${++idCounter}`;
 
 export interface UsePresets {
   views: SavedView[];
-  savePreset: (name: string, filters: ColumnFilter[], chart: ChartConfig) => void;
+  savePreset: (
+    name: string,
+    filters: ColumnFilter[],
+    chart: ChartConfig,
+    columns: ColumnViewItem[],
+  ) => void;
   deletePreset: (id: string) => void;
 }
 
@@ -30,13 +36,19 @@ export function usePresets(dataset: Dataset): UsePresets {
   }, [signature]);
 
   const savePreset = useCallback(
-    (name: string, filters: ColumnFilter[], chart: ChartConfig) => {
+    (
+      name: string,
+      filters: ColumnFilter[],
+      chart: ChartConfig,
+      columns: ColumnViewItem[],
+    ) => {
       const view: SavedView = {
         id: nextId(),
         name: name.trim(),
         datasetSignature: signature,
         filters,
         chart,
+        columns,
         createdAt: Date.now(),
       };
       setViews(saveView(view));

@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import type { CellValue, Dataset } from '@/types/dataset';
+import type { CellValue, ColumnSchema, Dataset } from '@/types/dataset';
 
 /** Papa.unparse stringifies primitives and renders null/'' as empty fields. */
 function cellToField(cell: CellValue): string | number | boolean {
@@ -8,15 +8,20 @@ function cellToField(cell: CellValue): string | number | boolean {
 
 /**
  * Serializes the rows referenced by `order` (the current filtered + sorted
- * display order) back to a CSV string, using the original column names as the
- * header. PapaParse handles quoting/escaping. Operates through the index array,
- * so only the exported view is materialized.
+ * display order) to CSV. `columns` controls which columns and in what order
+ * (defaults to all) — so the export mirrors the visible table. PapaParse handles
+ * quoting/escaping; operating through the index array means only the exported
+ * view is materialized.
  */
-export function datasetToCsv(dataset: Dataset, order: number[]): string {
-  const fields = dataset.columns.map((c) => c.name);
+export function datasetToCsv(
+  dataset: Dataset,
+  order: number[],
+  columns: ColumnSchema[] = dataset.columns,
+): string {
+  const fields = columns.map((c) => c.name);
   const data = order.map((rowIdx) => {
     const row = dataset.rows[rowIdx];
-    return dataset.columns.map((_, c) => cellToField(row[c]));
+    return columns.map((c) => cellToField(row[dataset.columnIndex[c.key]]));
   });
   return Papa.unparse({ fields, data });
 }
