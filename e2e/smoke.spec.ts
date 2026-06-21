@@ -100,3 +100,24 @@ test('compare: overlay trends across two files', async ({ page }) => {
   await expect(page.locator('.recharts-legend-item')).toHaveCount(2);
   await expect(page.locator('.recharts-bar-rectangle')).toHaveCount(6);
 });
+
+test('compare: a per-file filter narrows that file’s subset', async ({ page }) => {
+  await page.goto('/');
+  await page.setInputFiles('input[type="file"]', CSV1);
+  // Wait for the first file to land before adding the second (worker parse).
+  await expect(page.getByRole('button', { name: 'Compare', exact: true })).toBeVisible();
+  await page.setInputFiles('input[type="file"]', CSV2);
+  await expect(page.getByText('server-logs-2.csv')).toBeVisible();
+  await page.getByRole('button', { name: 'Compare', exact: true }).click();
+
+  // Filter only the second file to status_code >= 500 (5 of its 12 rows).
+  const row = page
+    .getByTestId('compare-file-row')
+    .filter({ hasText: 'server-logs-2.csv' });
+  await row.getByRole('button', { name: '+ Filter' }).click();
+  await row.getByLabel('Column').selectOption('status_code');
+  await row.getByLabel('Operator').selectOption('gte');
+  await row.getByLabel('Value').fill('500');
+
+  await expect(row.getByText('5 of 12 rows')).toBeVisible();
+});

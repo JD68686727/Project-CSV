@@ -1,11 +1,17 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { ColumnSchema } from '@/types/dataset';
+import type { ColumnSchema, Dataset } from '@/types/dataset';
 import type { Aggregation, DateBucket } from '@/types/chart';
+import type { ColumnFilter } from '@/types/filter';
 import type { CompareChartType, CompareResult } from '@/types/compare';
 import type { LoadedFile } from '@/types/workspace';
 import { commonColumns, commonNumericColumns } from '@/lib/compare/commonColumns';
 import { buildComparison } from '@/lib/compare/buildComparison';
+import { applyFilters } from '@/lib/filter/applyFilters';
+import { operatorsForType } from '@/lib/filter/operators';
 import { seriesColor } from '@/utils/chartColors';
+
+let filterIdCounter = 0;
+const nextFilterId = () => `cmpf-${++filterIdCounter}`;
 
 interface ConfigState {
   type: CompareChartType;
@@ -18,15 +24,28 @@ interface ConfigState {
 export interface CompareFileItem {
   id: string;
   label: string;
+  /** Total rows in the file. */
   rows: number;
+  /** Rows after this file's own filters. */
+  filteredRows: number;
   included: boolean;
   /** Series colour when included; undefined when excluded. */
   color?: string;
+  /** This file's dataset, for rendering its filter editor. */
+  dataset: Dataset;
+  filters: ColumnFilter[];
 }
 
 export interface UseCompareConfig {
   files: CompareFileItem[];
   toggleFile: (id: string) => void;
+  addFileFilter: (fileId: string) => void;
+  updateFileFilter: (
+    fileId: string,
+    filterId: string,
+    patch: Partial<ColumnFilter>,
+  ) => void;
+  removeFileFilter: (fileId: string, filterId: string) => void;
   commonCols: ColumnSchema[];
   commonNumeric: ColumnSchema[];
   config: ConfigState;
@@ -55,6 +74,9 @@ function buildLabels(files: LoadedFile[]): Map<string, string> {
 
 export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
   const [excluded, setExcluded] = useState<Set<string>>(() => new Set());
+  const [filtersByFile, setFiltersByFile] = useState<
+    Record<string, ColumnFilter[]>
+  >({});
   const [cfg, setCfg] = useState<ConfigState>({
     type: 'bar',
     dimensionKey: '',
@@ -68,6 +90,15 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
     () => files.filter((f) => !excluded.has(f.id)),
     [files, excluded],
   );
+
+  // Each file's per-file filtered row indices.
+  const orderById = useMemo(() => {
+    const map = new Map<string, number[]>();
+    for (const f of files) {
+      map.set(f.id, applyFilters(f.dataset, filtersByFile[f.id] ?? []));
+    }
+    return map;
+  }, [files, filtersByFile]);
 
   const commonCols = useMemo(
     () => commonColumns(included.map((f) => f.dataset)),
@@ -107,8 +138,11 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
     id: f.id,
     label: labels.get(f.id) ?? f.dataset.meta.fileName,
     rows: f.dataset.rows.length,
+    filteredRows: orderById.get(f.id)?.length ?? f.dataset.rows.length,
     included: !excluded.has(f.id),
     color: colorById.get(f.id),
+    dataset: f.dataset,
+    filters: filtersByFile[f.id] ?? [],
   }));
 
   const result = useMemo<CompareResult>(() => {
@@ -119,15 +153,17 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
       included.map((f) => ({
         label: labels.get(f.id) ?? f.dataset.meta.fileName,
         dataset: f.dataset,
+        order: orderById.get(f.id) ?? [],
       })),
       { ...effectiveConfig, fileIds: included.map((f) => f.id) },
     );
-    // effectiveConfig is derived from cfg + included; listing its parts keeps
-    // the memo honest without re-running on unrelated renders.
+    // effectiveConfig is derived from the listed primitives; orderById carries
+    // the per-file filters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     included,
     labels,
+    orderById,
     dimensionKey,
     measureKey,
     cfg.type,
@@ -142,6 +178,42 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
       else next.add(id);
       return next;
     });
+  }, []);
+
+  const addFileFilter = useCallback(
+    (fileId: string) => {
+      const file = files.find((f) => f.id === fileId);
+      if (!file || file.dataset.columns.length === 0) return;
+      const col = file.dataset.columns[0];
+      const op = operatorsForType(col.type)[0]?.value ?? 'isNotEmpty';
+      setFiltersByFile((prev) => ({
+        ...prev,
+        [fileId]: [
+          ...(prev[fileId] ?? []),
+          { id: nextFilterId(), columnKey: col.key, operator: op, value: '' },
+        ],
+      }));
+    },
+    [files],
+  );
+
+  const updateFileFilter = useCallback(
+    (fileId: string, filterId: string, patch: Partial<ColumnFilter>) => {
+      setFiltersByFile((prev) => ({
+        ...prev,
+        [fileId]: (prev[fileId] ?? []).map((f) =>
+          f.id === filterId ? { ...f, ...patch } : f,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const removeFileFilter = useCallback((fileId: string, filterId: string) => {
+    setFiltersByFile((prev) => ({
+      ...prev,
+      [fileId]: (prev[fileId] ?? []).filter((f) => f.id !== filterId),
+    }));
   }, []);
 
   const setType = useCallback(
@@ -168,6 +240,9 @@ export function useCompareConfig(files: LoadedFile[]): UseCompareConfig {
   return {
     files: fileItems,
     toggleFile,
+    addFileFilter,
+    updateFileFilter,
+    removeFileFilter,
     commonCols,
     commonNumeric,
     config: effectiveConfig,

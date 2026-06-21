@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { CompareConfig } from '@/types/compare';
 import { buildComparison } from './buildComparison';
-import { makeDataset } from '@/test/factory';
+import { makeDataset, allRows } from '@/test/factory';
 
 const fileA = makeDataset(
   [
@@ -39,8 +39,8 @@ describe('buildComparison', () => {
   it('aligns each file as a series keyed by category', () => {
     const res = buildComparison(
       [
-        { label: 'A', dataset: fileA },
-        { label: 'B', dataset: fileB },
+        { label: 'A', dataset: fileA, order: allRows(fileA) },
+        { label: 'B', dataset: fileB, order: allRows(fileB) },
       ],
       cfg({ aggregation: 'count' }),
     );
@@ -53,8 +53,8 @@ describe('buildComparison', () => {
   it('fills 0 for categories absent in a file (union of categories)', () => {
     const res = buildComparison(
       [
-        { label: 'A', dataset: fileA },
-        { label: 'B', dataset: fileB },
+        { label: 'A', dataset: fileA, order: allRows(fileA) },
+        { label: 'B', dataset: fileB, order: allRows(fileB) },
       ],
       cfg({ aggregation: 'count' }),
     );
@@ -65,8 +65,8 @@ describe('buildComparison', () => {
   it('orders bar categories by cross-file total descending', () => {
     const res = buildComparison(
       [
-        { label: 'A', dataset: fileA },
-        { label: 'B', dataset: fileB },
+        { label: 'A', dataset: fileA, order: allRows(fileA) },
+        { label: 'B', dataset: fileB, order: allRows(fileB) },
       ],
       cfg({ type: 'bar', aggregation: 'count' }),
     );
@@ -78,13 +78,27 @@ describe('buildComparison', () => {
   it('aggregates a shared numeric measure per file', () => {
     const res = buildComparison(
       [
-        { label: 'A', dataset: fileA },
-        { label: 'B', dataset: fileB },
+        { label: 'A', dataset: fileA, order: allRows(fileA) },
+        { label: 'B', dataset: fileB, order: allRows(fileB) },
       ],
       cfg({ aggregation: 'avg', measureKey: 'latency' }),
     );
     const info = res.data.find((r) => r.name === 'INFO')!;
     expect(info.A).toBe(15); // (10+20)/2
     expect(info.B).toBe(5);
+  });
+
+  it("respects each file's per-file order (filtered subset)", () => {
+    // Only count fileA's ERROR row (index 2); fileB unfiltered.
+    const res = buildComparison(
+      [
+        { label: 'A', dataset: fileA, order: [2] },
+        { label: 'B', dataset: fileB, order: allRows(fileB) },
+      ],
+      cfg({ aggregation: 'count' }),
+    );
+    const byName = Object.fromEntries(res.data.map((r) => [r.name, r]));
+    expect(byName.ERROR).toEqual({ name: 'ERROR', A: 1, B: 0 });
+    expect(byName.INFO).toEqual({ name: 'INFO', A: 0, B: 1 }); // A's INFO rows excluded
   });
 });
