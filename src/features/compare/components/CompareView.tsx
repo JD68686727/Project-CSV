@@ -1,0 +1,214 @@
+import type { Aggregation, DateBucket } from '@/types/chart';
+import type { CompareChartType } from '@/types/compare';
+import type { LoadedFile } from '@/types/workspace';
+import { cn } from '@/utils/cn';
+import { useCompareConfig } from '../hooks/useCompareConfig';
+import { CompareChart } from './CompareChart';
+
+const selectCls =
+  'rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20';
+
+const CHART_TYPES: { value: CompareChartType; label: string }[] = [
+  { value: 'bar', label: 'Bar' },
+  { value: 'line', label: 'Line' },
+];
+
+const AGGREGATIONS: { value: Aggregation; label: string }[] = [
+  { value: 'count', label: 'Count' },
+  { value: 'sum', label: 'Sum' },
+  { value: 'avg', label: 'Average' },
+  { value: 'min', label: 'Min' },
+  { value: 'max', label: 'Max' },
+];
+
+const BUCKETS: { value: DateBucket; label: string }[] = [
+  { value: 'none', label: 'No bucket' },
+  { value: 'hour', label: 'By hour' },
+  { value: 'day', label: 'By day' },
+  { value: 'week', label: 'By week' },
+  { value: 'month', label: 'By month' },
+];
+
+export interface CompareViewProps {
+  files: LoadedFile[];
+}
+
+export function CompareView({ files }: CompareViewProps) {
+  const {
+    files: fileItems,
+    toggleFile,
+    commonCols,
+    commonNumeric,
+    config,
+    dimensionIsDate,
+    includedCount,
+    setType,
+    setDimension,
+    setMeasure,
+    setAggregation,
+    setBucket,
+    result,
+  } = useCompareConfig(files);
+
+  if (files.length < 2) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <p className="text-sm font-medium text-slate-600">
+          Add a second file to compare
+        </p>
+        <p className="mt-1 text-xs text-slate-400">
+          Use “Add file” above, then compare trends across files here.
+        </p>
+      </div>
+    );
+  }
+
+  const noCommon = commonCols.length === 0;
+  const measureDisabled = config.aggregation === 'count';
+  const noNumeric = commonNumeric.length === 0;
+  const truncated = result.data.length < result.groupCount;
+
+  return (
+    <div className="space-y-3">
+      {/* File toggles */}
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
+        <span className="text-sm font-semibold text-slate-700">Files</span>
+        {fileItems.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            onClick={() => toggleFile(f.id)}
+            aria-pressed={f.included}
+            className={cn(
+              'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm transition-colors',
+              f.included
+                ? 'border-slate-300 bg-white text-slate-700'
+                : 'border-slate-200 bg-slate-50 text-slate-400',
+            )}
+          >
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: f.included ? f.color : '#cbd5e1' }}
+            />
+            <span className="font-medium">{f.label}</span>
+            <span className="text-xs text-slate-400">
+              {f.rows.toLocaleString()} rows
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {noCommon ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-700">
+          The selected files share no common columns to compare on.
+        </div>
+      ) : (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+              {CHART_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setType(t.value)}
+                  className={cn(
+                    'rounded-md px-3 py-1 text-sm font-medium transition-colors',
+                    config.type === t.value
+                      ? 'bg-white text-brand-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700',
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <label className="text-xs font-medium text-slate-500">Group by</label>
+              <select
+                aria-label="Group by column"
+                value={config.dimensionKey}
+                onChange={(e) => setDimension(e.target.value)}
+                className={selectCls}
+              >
+                {commonCols.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+
+              {dimensionIsDate && (
+                <select
+                  aria-label="Date bucket"
+                  value={config.bucket}
+                  onChange={(e) => setBucket(e.target.value as DateBucket)}
+                  className={selectCls}
+                >
+                  {BUCKETS.map((b) => (
+                    <option key={b.value} value={b.value}>
+                      {b.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <select
+                aria-label="Aggregation"
+                value={config.aggregation}
+                onChange={(e) => setAggregation(e.target.value as Aggregation)}
+                className={selectCls}
+              >
+                {AGGREGATIONS.map((a) => (
+                  <option key={a.value} value={a.value}>
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                aria-label="Measure column"
+                value={config.measureKey ?? ''}
+                onChange={(e) => setMeasure(e.target.value)}
+                disabled={measureDisabled || noNumeric}
+                className={cn(
+                  selectCls,
+                  (measureDisabled || noNumeric) && 'opacity-40',
+                )}
+              >
+                {noNumeric ? (
+                  <option value="">— no shared numeric columns —</option>
+                ) : (
+                  commonNumeric.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          </div>
+
+          {includedCount < 1 ? (
+            <div className="flex h-72 items-center justify-center text-sm text-slate-400">
+              Select at least one file to chart
+            </div>
+          ) : (
+            <CompareChart
+              type={config.type}
+              data={result.data}
+              seriesLabels={result.seriesLabels}
+            />
+          )}
+
+          {truncated && (
+            <p className="mt-2 text-center text-xs text-slate-400">
+              Showing top {result.data.length} of{' '}
+              {result.groupCount.toLocaleString()} categories
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -13,6 +13,8 @@ export interface UseFilters {
   updateFilter: (id: string, patch: Partial<ColumnFilter>) => void;
   removeFilter: (id: string) => void;
   clearFilters: () => void;
+  /** Replaces all filters (e.g. applying a saved preset), with fresh ids. */
+  replaceFilters: (filters: ColumnFilter[]) => void;
   /** Row indices passing all filters (AND). Memoized. */
   filteredOrder: number[];
 }
@@ -40,6 +42,11 @@ export function useFilters(dataset: Dataset | null): UseFilters {
 
   const clearFilters = useCallback(() => setFilters([]), []);
 
+  const replaceFilters = useCallback((next: ColumnFilter[]) => {
+    // Reassign ids so restored presets can't collide with live filter keys.
+    setFilters(next.map((f) => ({ ...f, id: nextId() })));
+  }, []);
+
   const filteredOrder = useMemo(() => {
     if (!dataset) return [];
     return applyFilters(dataset, filters);
@@ -51,6 +58,7 @@ export function useFilters(dataset: Dataset | null): UseFilters {
     updateFilter,
     removeFilter,
     clearFilters,
+    replaceFilters,
     filteredOrder,
   };
 }

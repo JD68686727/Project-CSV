@@ -1,13 +1,7 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react';
 import type { ParseStatus } from '@/types/dataset';
 import { cn } from '@/utils/cn';
-
-const ACCEPTED = ['.csv', '.tsv', '.log', '.txt'] as const;
-
-function isAccepted(file: File): boolean {
-  const lower = file.name.toLowerCase();
-  return ACCEPTED.some((ext) => lower.endsWith(ext));
-}
+import { ACCEPTED, isAccepted } from '../acceptedTypes';
 
 export interface DropZoneProps {
   status: ParseStatus;
