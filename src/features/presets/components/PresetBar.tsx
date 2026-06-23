@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import type { SavedView } from '@/types/view';
 
 const inputCls =
-  'w-40 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20';
+  'w-40 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200';
 
 export interface PresetBarProps {
   views: SavedView[];
@@ -24,18 +24,20 @@ export function PresetBar({ views, onApply, onSave, onDelete }: PresetBarProps) 
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
-      <span className="text-sm font-semibold text-slate-700">Saved views</span>
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+        Saved views
+      </span>
 
       {views.length === 0 ? (
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-slate-400 dark:text-slate-500">
           none yet — configure filters/chart, then save
         </span>
       ) : (
         views.map((v) => (
           <span
             key={v.id}
-            className="inline-flex items-center gap-1 rounded-full bg-brand-50 py-1 pl-3 pr-1 text-sm text-brand-700"
+            className="inline-flex items-center gap-1 rounded-full bg-brand-50 py-1 pl-3 pr-1 text-sm text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
           >
             <button
               type="button"
@@ -49,7 +51,7 @@ export function PresetBar({ views, onApply, onSave, onDelete }: PresetBarProps) 
               type="button"
               onClick={() => onDelete(v.id)}
               aria-label={`Delete view ${v.name}`}
-              className="flex h-5 w-5 items-center justify-center rounded-full text-brand-400 hover:bg-brand-100 hover:text-rose-600"
+              className="flex h-5 w-5 items-center justify-center rounded-full text-brand-400 hover:bg-brand-100 hover:text-rose-600 dark:hover:bg-brand-500/25 dark:hover:text-rose-400"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -78,7 +80,7 @@ export function PresetBar({ views, onApply, onSave, onDelete }: PresetBarProps) 
         <button
           type="submit"
           disabled={!name.trim()}
-          className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-slate-700 dark:hover:bg-slate-600"
         >
           Save view
         </button>

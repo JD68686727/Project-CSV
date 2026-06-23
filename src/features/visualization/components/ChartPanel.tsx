@@ -1,11 +1,9 @@
 import type { Dataset } from '@/types/dataset';
 import type { Aggregation, ChartType, DateBucket } from '@/types/chart';
 import { cn } from '@/utils/cn';
+import { selectCls } from '@/utils/controls';
 import type { UseChartConfig } from '../hooks/useChartConfig';
 import { ChartView } from './ChartView';
-
-const selectCls =
-  'rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20';
 
 const CHART_TYPES: { value: ChartType; label: string }[] = [
   { value: 'bar', label: 'Bar' },
@@ -63,9 +61,9 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
   const truncated = result.data.length < result.groupCount;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+        <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
           {CHART_TYPES.map((t) => (
             <button
               key={t.value}
@@ -74,8 +72,8 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
               className={cn(
                 'rounded-md px-3 py-1 text-sm font-medium transition-colors',
                 config.type === t.value
-                  ? 'bg-white text-brand-700 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700',
+                  ? 'bg-white text-brand-700 shadow-sm dark:bg-slate-700 dark:text-brand-300'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
               )}
             >
               {t.label}
@@ -84,7 +82,9 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <label className="text-xs font-medium text-slate-500">Group by</label>
+          <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            Group by
+          </label>
           <select
             aria-label="Group by column"
             value={config.dimensionKey}
@@ -149,7 +149,7 @@ export function ChartPanel({ dataset, chart }: ChartPanelProps) {
       <ChartView type={config.type} data={result.data} valueLabel={valueLabel} />
 
       {truncated && (
-        <p className="mt-2 text-center text-xs text-slate-400">
+        <p className="mt-2 text-center text-xs text-slate-400 dark:text-slate-500">
           Showing top {result.data.length} of {result.groupCount.toLocaleString()}{' '}
           groups
         </p>

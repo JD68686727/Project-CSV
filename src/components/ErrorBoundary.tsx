@@ -1,3 +1,5 @@
+/* eslint-disable react-refresh/only-export-components -- error boundaries must be
+   class components, and DefaultFallback is a local helper (Fast Refresh dev-only). */
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
@@ -15,9 +17,6 @@ interface ErrorBoundaryState {
  * chart crash) degrades gracefully instead of unmounting the whole app. Stays
  * local-first: errors are logged to the console, never sent anywhere.
  */
-// React error boundaries must be class components, which the Fast Refresh lint
-// rule doesn't recognise as a component export.
-// eslint-disable-next-line react-refresh/only-export-components
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
@@ -52,15 +51,19 @@ function DefaultFallback({
   return (
     <div
       role="alert"
-      className="mx-auto mt-16 max-w-lg rounded-xl border border-rose-200 bg-rose-50 p-6 text-center"
+      className="mx-auto mt-16 max-w-lg rounded-xl border border-rose-200 bg-rose-50 p-6 text-center dark:border-rose-500/30 dark:bg-rose-500/10"
     >
-      <p className="text-base font-semibold text-rose-800">Something went wrong</p>
-      <p className="mt-1 break-words text-sm text-rose-600">{error.message}</p>
+      <p className="text-base font-semibold text-rose-800 dark:text-rose-300">
+        Something went wrong
+      </p>
+      <p className="mt-1 break-words text-sm text-rose-600 dark:text-rose-400">
+        {error.message}
+      </p>
       <div className="mt-4 flex justify-center gap-2">
         <button
           type="button"
           onClick={onReset}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           Try again
         </button>

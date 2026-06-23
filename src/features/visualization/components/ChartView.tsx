@@ -28,7 +28,19 @@ const COLORS = [
   '#14b8a6',
 ];
 
-const AXIS_TICK = { fontSize: 11, fill: '#64748b' };
+// Theme-aware via CSS variables (see index.css) so charts adapt to dark mode.
+const AXIS_TICK = { fontSize: 11, fill: 'var(--chart-axis)' };
+const GRID = 'var(--chart-grid)';
+const tooltipStyle = {
+  contentStyle: {
+    backgroundColor: 'var(--chart-tooltip-bg)',
+    border: '1px solid var(--chart-tooltip-border)',
+    borderRadius: 8,
+    color: 'var(--chart-tooltip-text)',
+  },
+  labelStyle: { color: 'var(--chart-tooltip-text)' },
+  itemStyle: { color: 'var(--chart-tooltip-text)' },
+};
 
 /** Coerces Recharts' ValueType (number | string | array) before formatting. */
 function formatTooltip(value: unknown): string {
@@ -50,10 +62,13 @@ function renderChart(
   if (type === 'line') {
     return (
       <LineChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
         <XAxis dataKey="name" tick={AXIS_TICK} interval="preserveStartEnd" />
         <YAxis tick={AXIS_TICK} width={48} />
-        <Tooltip formatter={(value) => [formatTooltip(value), valueLabel]} />
+        <Tooltip
+          formatter={(value) => [formatTooltip(value), valueLabel]}
+          {...tooltipStyle}
+        />
         <Line
           type="monotone"
           dataKey="value"
@@ -69,7 +84,10 @@ function renderChart(
   if (type === 'pie') {
     return (
       <PieChart>
-        <Tooltip formatter={(value) => [formatTooltip(value), valueLabel]} />
+        <Tooltip
+          formatter={(value) => [formatTooltip(value), valueLabel]}
+          {...tooltipStyle}
+        />
         <Legend />
         <Pie
           data={data}
@@ -90,10 +108,13 @@ function renderChart(
 
   return (
     <BarChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
-      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+      <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
       <XAxis dataKey="name" tick={AXIS_TICK} interval="preserveStartEnd" />
       <YAxis tick={AXIS_TICK} width={48} />
-      <Tooltip formatter={(value) => [formatTooltip(value), valueLabel]} />
+      <Tooltip
+        formatter={(value) => [formatTooltip(value), valueLabel]}
+        {...tooltipStyle}
+      />
       <Bar dataKey="value" name={valueLabel} fill="#6366f1" radius={[4, 4, 0, 0]} />
     </BarChart>
   );
@@ -102,7 +123,7 @@ function renderChart(
 export function ChartView({ type, data, valueLabel }: ChartViewProps) {
   if (data.length === 0) {
     return (
-      <div className="flex h-72 items-center justify-center text-sm text-slate-400">
+      <div className="flex h-72 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
         No data to chart
       </div>
     );

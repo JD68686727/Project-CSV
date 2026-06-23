@@ -2,12 +2,10 @@ import type { Aggregation, DateBucket } from '@/types/chart';
 import type { CompareChartType } from '@/types/compare';
 import type { LoadedFile } from '@/types/workspace';
 import { cn } from '@/utils/cn';
+import { selectCls } from '@/utils/controls';
 import { useCompareConfig } from '../hooks/useCompareConfig';
 import { CompareChart } from './CompareChart';
 import { CompareFileRow } from './CompareFileRow';
-
-const selectCls =
-  'rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20';
 
 const CHART_TYPES: { value: CompareChartType; label: string }[] = [
   { value: 'bar', label: 'Bar' },
@@ -56,11 +54,11 @@ export function CompareView({ files }: CompareViewProps) {
 
   if (files.length < 2) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
-        <p className="text-sm font-medium text-slate-600">
+      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center dark:border-slate-700 dark:bg-slate-900">
+        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
           Add a second file to compare
         </p>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
           Use “Add file” above, then compare trends across files here.
         </p>
       </div>
@@ -75,8 +73,10 @@ export function CompareView({ files }: CompareViewProps) {
   return (
     <div className="space-y-3">
       {/* Files — each with its own filter (compare filtered subsets) */}
-      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-        <span className="text-sm font-semibold text-slate-700">Files</span>
+      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+          Files
+        </span>
         <div className="space-y-2">
           {fileItems.map((f) => (
             <CompareFileRow
@@ -92,13 +92,13 @@ export function CompareView({ files }: CompareViewProps) {
       </div>
 
       {noCommon ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-700">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
           The selected files share no common columns to compare on.
         </div>
       ) : (
-        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
               {CHART_TYPES.map((t) => (
                 <button
                   key={t.value}
@@ -107,8 +107,8 @@ export function CompareView({ files }: CompareViewProps) {
                   className={cn(
                     'rounded-md px-3 py-1 text-sm font-medium transition-colors',
                     config.type === t.value
-                      ? 'bg-white text-brand-700 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700',
+                      ? 'bg-white text-brand-700 shadow-sm dark:bg-slate-700 dark:text-brand-300'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
                   )}
                 >
                   {t.label}
@@ -117,7 +117,9 @@ export function CompareView({ files }: CompareViewProps) {
             </div>
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
-              <label className="text-xs font-medium text-slate-500">Group by</label>
+              <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                Group by
+              </label>
               <select
                 aria-label="Group by column"
                 value={config.dimensionKey}
@@ -183,7 +185,7 @@ export function CompareView({ files }: CompareViewProps) {
           </div>
 
           {includedCount < 1 ? (
-            <div className="flex h-72 items-center justify-center text-sm text-slate-400">
+            <div className="flex h-72 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
               Select at least one file to chart
             </div>
           ) : (
@@ -195,7 +197,7 @@ export function CompareView({ files }: CompareViewProps) {
           )}
 
           {truncated && (
-            <p className="mt-2 text-center text-xs text-slate-400">
+            <p className="mt-2 text-center text-xs text-slate-400 dark:text-slate-500">
               Showing top {result.data.length} of{' '}
               {result.groupCount.toLocaleString()} categories
             </p>

@@ -30,12 +30,12 @@ export function FilterBar({
   const isFiltered = resultCount !== totalCount;
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900">
       {/* Global search — grep across all columns */}
       <div className="relative mb-3">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -52,14 +52,14 @@ export function FilterBar({
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Search all columns…"
           aria-label="Search all columns"
-          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-9 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-9 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:placeholder:text-slate-500"
         />
         {query !== '' && (
           <button
             type="button"
             onClick={() => onQueryChange('')}
             aria-label="Clear search"
-            className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -78,12 +78,14 @@ export function FilterBar({
 
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-semibold text-slate-700">Filters</span>
+          <span className="font-semibold text-slate-700 dark:text-slate-200">
+            Filters
+          </span>
           <span
             className={
               isFiltered
-                ? 'rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700'
-                : 'text-xs text-slate-400'
+                ? 'rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-500/20 dark:text-brand-300'
+                : 'text-xs text-slate-400 dark:text-slate-500'
             }
           >
             {resultCount.toLocaleString()} of {totalCount.toLocaleString()} rows
@@ -95,7 +97,7 @@ export function FilterBar({
             <button
               type="button"
               onClick={onClear}
-              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             >
               Clear all
             </button>

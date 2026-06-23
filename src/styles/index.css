@@ -9,6 +9,24 @@
   }
 
   body {
-    @apply bg-slate-100 text-slate-900;
+    @apply bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  }
+
+  /* Chart colours (Recharts) as CSS variables so they adapt to the theme
+     without per-component JS theme detection. */
+  :root {
+    --chart-grid: #e2e8f0; /* slate-200 */
+    --chart-axis: #64748b; /* slate-500 */
+    --chart-tooltip-bg: #ffffff;
+    --chart-tooltip-border: #e2e8f0;
+    --chart-tooltip-text: #0f172a; /* slate-900 */
+  }
+
+  .dark {
+    --chart-grid: #334155; /* slate-700 */
+    --chart-axis: #94a3b8; /* slate-400 */
+    --chart-tooltip-bg: #1e293b; /* slate-800 */
+    --chart-tooltip-border: #334155;
+    --chart-tooltip-text: #f1f5f9; /* slate-100 */
   }
 }

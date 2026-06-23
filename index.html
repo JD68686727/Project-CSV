@@ -9,6 +9,19 @@
       content="LogVibe — privacy-first, local CSV & server log analyzer. Your data never leaves your browser."
     />
     <title>LogVibe — Local CSV & Log Analyzer</title>
+    <script>
+      // Apply the saved/system theme before paint to avoid a flash of light mode.
+      (function () {
+        try {
+          var t = localStorage.getItem('logvibe.theme');
+          var dark =
+            t === 'dark' ||
+            ((!t || t === 'system') &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

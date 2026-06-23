@@ -81,8 +81,8 @@ export function DropZone({ status, progress, onFileSelected }: DropZoneProps) {
           'cursor-pointer outline-none transition-all duration-200',
           'focus-visible:ring-4 focus-visible:ring-brand-500/30',
           isDragging
-            ? 'scale-[1.01] border-brand-500 bg-brand-50'
-            : 'border-slate-300 bg-slate-50 hover:border-brand-500 hover:bg-white',
+            ? 'scale-[1.01] border-brand-500 bg-brand-50 dark:bg-brand-500/10'
+            : 'border-slate-300 bg-slate-50 hover:border-brand-500 hover:bg-white dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800',
         )}
       >
         <input
@@ -98,7 +98,7 @@ export function DropZone({ status, progress, onFileSelected }: DropZoneProps) {
             'mb-4 flex h-16 w-16 items-center justify-center rounded-full transition-colors',
             isDragging
               ? 'bg-brand-500 text-white'
-              : 'bg-white text-brand-600 shadow-sm group-hover:bg-brand-500 group-hover:text-white',
+              : 'bg-white text-brand-600 shadow-sm group-hover:bg-brand-500 group-hover:text-white dark:bg-slate-800 dark:text-brand-400',
           )}
         >
           <svg
@@ -119,24 +119,32 @@ export function DropZone({ status, progress, onFileSelected }: DropZoneProps) {
 
         {isParsing ? (
           <>
-            <p className="text-base font-medium text-slate-700">Parsing your file…</p>
-            <div className="mt-4 h-2 w-56 overflow-hidden rounded-full bg-slate-200">
+            <p className="text-base font-medium text-slate-700 dark:text-slate-200">
+              Parsing your file…
+            </p>
+            <div className="mt-4 h-2 w-56 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
               <div
                 className="h-full rounded-full bg-brand-500 transition-[width] duration-150"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="mt-2 text-xs text-slate-500">{progress}%</p>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              {progress}%
+            </p>
           </>
         ) : (
           <>
-            <p className="text-base font-semibold text-slate-800">
+            <p className="text-base font-semibold text-slate-800 dark:text-slate-100">
               Drop your CSV or log file here
             </p>
-            <p className="mt-1 text-sm text-slate-500">
-              or <span className="font-medium text-brand-600">browse</span> to upload
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              or{' '}
+              <span className="font-medium text-brand-600 dark:text-brand-400">
+                browse
+              </span>{' '}
+              to upload
             </p>
-            <p className="mt-3 text-xs text-slate-400">
+            <p className="mt-3 text-xs text-slate-400 dark:text-slate-500">
               {ACCEPTED.join(' · ')} — processed 100% locally, nothing leaves your
               browser
             </p>
@@ -145,7 +153,9 @@ export function DropZone({ status, progress, onFileSelected }: DropZoneProps) {
       </div>
 
       {rejected && (
-        <p className="mt-3 text-sm font-medium text-rose-600">{rejected}</p>
+        <p className="mt-3 text-sm font-medium text-rose-600 dark:text-rose-400">
+          {rejected}
+        </p>
       )}
     </div>
   );
