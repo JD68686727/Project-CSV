@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ColumnSchema, Dataset } from '@/types/dataset';
+import type { SortDirection, SortKey } from '@/types/table';
 import { cn } from '@/utils/cn';
-import type { SortDirection, SortState } from '../hooks/useSortedRows';
 import { formatCell } from '../utils/formatCell';
 
 const ROW_HEIGHT = 36;
@@ -15,14 +15,27 @@ export interface DataTableProps {
   columns: ColumnSchema[];
   /** Row indices into `dataset.rows`, in display order (filtered + sorted). */
   order: number[];
-  sort: SortState | null;
-  onToggleSort: (columnKey: string) => void;
+  /** Active sort keys, primary first. */
+  sortKeys: SortKey[];
+  onToggleSort: (columnKey: string, additive: boolean) => void;
 }
 
-function SortIcon({ direction }: { direction: SortDirection | null }) {
+function SortIcon({
+  direction,
+  priority,
+}: {
+  direction: SortDirection | null;
+  priority: number | null;
+}) {
+  if (direction === null) return null;
   return (
-    <span className="ml-auto text-[10px] leading-none text-brand-600">
-      {direction === 'asc' ? '▲' : direction === 'desc' ? '▼' : ''}
+    <span className="ml-auto flex items-center gap-0.5 text-[10px] leading-none text-brand-600 dark:text-brand-400">
+      {direction === 'asc' ? '▲' : '▼'}
+      {priority !== null && (
+        <span className="rounded bg-brand-100 px-1 text-[9px] font-semibold text-brand-700 dark:bg-brand-500/20 dark:text-brand-300">
+          {priority}
+        </span>
+      )}
     </span>
   );
 }
@@ -37,7 +50,7 @@ export function DataTable({
   dataset,
   columns,
   order,
-  sort,
+  sortKeys,
   onToggleSort,
 }: DataTableProps) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -63,20 +76,24 @@ export function DataTable({
             #
           </div>
           {columns.map((col) => {
-            const active = sort?.columnKey === col.key;
+            const sortIndex = sortKeys.findIndex((k) => k.columnKey === col.key);
+            const active = sortIndex !== -1;
             return (
               <button
                 key={col.key}
                 type="button"
-                onClick={() => onToggleSort(col.key)}
-                title={`${col.name} · ${col.type}`}
+                onClick={(e) => onToggleSort(col.key, e.shiftKey)}
+                title={`${col.name} · ${col.type} — click to sort, Shift-click to add`}
                 className={cn(
                   'flex items-center gap-1 px-3 py-2 text-left transition-colors hover:bg-slate-100 dark:hover:bg-slate-700',
                   active && 'text-brand-700 dark:text-brand-300',
                 )}
               >
                 <span className="truncate">{col.name}</span>
-                <SortIcon direction={active && sort ? sort.direction : null} />
+                <SortIcon
+                  direction={active ? sortKeys[sortIndex].direction : null}
+                  priority={active && sortKeys.length > 1 ? sortIndex + 1 : null}
+                />
               </button>
             );
           })}

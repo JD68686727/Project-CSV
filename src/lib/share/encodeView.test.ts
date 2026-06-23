@@ -7,7 +7,7 @@ const view: ViewState = {
     { id: 'f1', columnKey: 'status_code', operator: 'gte', value: '500' },
   ],
   query: 'payments',
-  sort: { columnKey: 'latency', direction: 'desc' },
+  sort: [{ columnKey: 'latency', direction: 'desc' }],
   chart: {
     type: 'bar',
     dimensionKey: 'level',
@@ -40,6 +40,13 @@ describe('encodeView / decodeView', () => {
 
   it('returns null for valid JSON that is not a view', () => {
     expect(decodeView(btoaSafe('[1,2,3]'))).toBeNull();
+  });
+
+  it('decodes a legacy single-sort token to a one-element array', () => {
+    const legacy = { ...view, sort: { columnKey: 'level', direction: 'asc' } };
+    expect(decodeView(btoaSafe(JSON.stringify(legacy)))?.sort).toEqual([
+      { columnKey: 'level', direction: 'asc' },
+    ]);
   });
 });
 

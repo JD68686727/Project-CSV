@@ -4,3 +4,12 @@ export interface ColumnViewItem {
   key: string;
   visible: boolean;
 }
+
+export type SortDirection = 'asc' | 'desc';
+
+/** One level of a multi-column sort. Position in the array is its priority
+ *  (index 0 = primary, 1 = secondary, …). */
+export interface SortKey {
+  columnKey: string;
+  direction: SortDirection;
+}
