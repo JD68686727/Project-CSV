@@ -1,4 +1,5 @@
 import type { ViewState } from '@/types/share';
+import type { SortKey } from '@/types/table';
 
 /** URL-safe base64 of a UTF-8 string (browser-native, no deps). */
 function toBase64Url(text: string): string {
@@ -20,8 +21,24 @@ export function encodeView(view: ViewState): string {
   return toBase64Url(JSON.stringify(view));
 }
 
-/** Minimal structural validation so a hand-edited/garbage token degrades to null. */
-function isViewState(value: unknown): value is ViewState {
+function isSortKey(value: unknown): value is SortKey {
+  if (typeof value !== 'object' || value === null) return false;
+  const s = value as Record<string, unknown>;
+  return (
+    typeof s.columnKey === 'string' &&
+    (s.direction === 'asc' || s.direction === 'desc')
+  );
+}
+
+/** Normalises `sort` to the array model, accepting legacy single-sort links. */
+function normalizeSort(raw: unknown): SortKey[] {
+  if (Array.isArray(raw)) return raw.filter(isSortKey);
+  if (isSortKey(raw)) return [raw]; // legacy { columnKey, direction }
+  return [];
+}
+
+/** Validates the non-sort fields; `sort` is normalised separately. */
+function isViewBase(value: unknown): value is Omit<ViewState, 'sort'> {
   if (typeof value !== 'object' || value === null) return false;
   const v = value as Record<string, unknown>;
   return (
@@ -29,8 +46,7 @@ function isViewState(value: unknown): value is ViewState {
     typeof v.query === 'string' &&
     typeof v.chart === 'object' &&
     v.chart !== null &&
-    Array.isArray(v.columns) &&
-    (v.sort === null || typeof v.sort === 'object')
+    Array.isArray(v.columns)
   );
 }
 
@@ -38,7 +54,9 @@ function isViewState(value: unknown): value is ViewState {
 export function decodeView(token: string): ViewState | null {
   try {
     const parsed: unknown = JSON.parse(fromBase64Url(token));
-    return isViewState(parsed) ? parsed : null;
+    if (!isViewBase(parsed)) return null;
+    const sort = normalizeSort((parsed as Record<string, unknown>).sort);
+    return { ...parsed, sort };
   } catch {
     return null;
   }

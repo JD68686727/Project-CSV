@@ -1,11 +1,6 @@
 import type { ChartConfig } from './chart';
 import type { ColumnFilter } from './filter';
-import type { ColumnViewItem } from './table';
-
-export interface ViewSort {
-  columnKey: string;
-  direction: 'asc' | 'desc';
-}
+import type { ColumnViewItem, SortKey } from './table';
 
 /**
  * The full analyze-view configuration that a shareable link carries. Like saved
@@ -15,7 +10,8 @@ export interface ViewSort {
 export interface ViewState {
   filters: ColumnFilter[];
   query: string;
-  sort: ViewSort | null;
+  /** Multi-column sort, primary first. */
+  sort: SortKey[];
   chart: ChartConfig;
   columns: ColumnViewItem[];
 }

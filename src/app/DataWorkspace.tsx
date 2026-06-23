@@ -49,7 +49,7 @@ export function DataWorkspace({
   const chart = useChartConfig(dataset, filtersApi.filteredOrder);
   const columnView = useColumnView(dataset);
   const presets = usePresets(dataset);
-  const { order, sort, toggleSort, setSort } = useSortedRows(
+  const { order, sortKeys, toggleSort, setSort } = useSortedRows(
     dataset,
     filtersApi.filteredOrder,
   );
@@ -63,11 +63,11 @@ export function DataWorkspace({
     (): ViewState => ({
       filters,
       query,
-      sort,
+      sort: sortKeys,
       chart: chartConfig,
       columns: columnViewState,
     }),
-    [filters, query, sort, chartConfig, columnViewState],
+    [filters, query, sortKeys, chartConfig, columnViewState],
   );
 
   // Apply a view from a shared link once, now that the dataset exists.
@@ -150,7 +150,7 @@ export function DataWorkspace({
         dataset={dataset}
         columns={visibleColumns}
         order={order}
-        sort={sort}
+        sortKeys={sortKeys}
         onToggleSort={toggleSort}
       />
 
