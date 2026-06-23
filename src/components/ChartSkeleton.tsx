@@ -20,7 +20,7 @@ export function ChartSkeleton({
       role="status"
       aria-live="polite"
       className={cn(
-        'flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-400',
+        'flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm text-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-500',
         className,
       )}
     >

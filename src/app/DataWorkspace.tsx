@@ -158,15 +158,15 @@ export function DataWorkspace({
         fallback={(_error, reset) => (
           <div
             role="alert"
-            className="flex h-80 flex-col items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 text-center"
+            className="flex h-80 flex-col items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 text-center dark:border-rose-500/30 dark:bg-rose-500/10"
           >
-            <p className="text-sm font-medium text-rose-700">
+            <p className="text-sm font-medium text-rose-700 dark:text-rose-300">
               Chart failed to render
             </p>
             <button
               type="button"
               onClick={reset}
-              className="rounded-md border border-rose-300 bg-white px-3 py-1 text-sm font-medium text-rose-700 hover:bg-rose-100"
+              className="rounded-md border border-rose-300 bg-white px-3 py-1 text-sm font-medium text-rose-700 hover:bg-rose-100 dark:border-rose-500/40 dark:bg-slate-800 dark:text-rose-300 dark:hover:bg-rose-500/20"
             >
               Try again
             </button>

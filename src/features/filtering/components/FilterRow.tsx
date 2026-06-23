@@ -1,9 +1,8 @@
 import type { Dataset } from '@/types/dataset';
 import type { ColumnFilter, FilterOperator } from '@/types/filter';
 import { getOperator, operatorsForType } from '@/lib/filter/operators';
+import { selectCls } from '@/utils/controls';
 
-const selectCls =
-  'rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20';
 const inputCls = `${selectCls} w-36`;
 
 export interface FilterRowProps {
@@ -42,7 +41,7 @@ export function FilterRow({ dataset, filter, onChange, onRemove }: FilterRowProp
   const placeholder = column.type === 'date' ? 'YYYY-MM-DD' : 'value';
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5">
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1.5 dark:border-slate-800 dark:bg-slate-900">
       <select
         aria-label="Column"
         value={filter.columnKey}
@@ -82,7 +81,7 @@ export function FilterRow({ dataset, filter, onChange, onRemove }: FilterRowProp
 
       {arity === 2 && (
         <>
-          <span className="text-xs text-slate-400">and</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">and</span>
           <input
             type={inputType}
             aria-label="Second value"
@@ -98,7 +97,7 @@ export function FilterRow({ dataset, filter, onChange, onRemove }: FilterRowProp
         type="button"
         onClick={onRemove}
         aria-label="Remove filter"
-        className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+        className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:text-slate-500 dark:hover:bg-rose-500/15 dark:hover:text-rose-400"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

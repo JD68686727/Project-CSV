@@ -40,7 +40,7 @@ export function WorkspaceBar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
+    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-900">
       {/* File tabs */}
       <div className="flex flex-wrap items-center gap-1.5">
         {files.map((f) => {
@@ -51,8 +51,8 @@ export function WorkspaceBar({
               className={cn(
                 'inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-colors',
                 active
-                  ? 'border-brand-300 bg-brand-50 text-brand-700'
-                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+                  ? 'border-brand-300 bg-brand-50 text-brand-700 dark:border-brand-500/40 dark:bg-brand-500/15 dark:text-brand-300'
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800',
               )}
             >
               <button
@@ -64,7 +64,7 @@ export function WorkspaceBar({
                 <span className="max-w-[14rem] truncate font-medium">
                   {f.dataset.meta.fileName}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-slate-400 dark:text-slate-500">
                   {f.dataset.meta.rowCount.toLocaleString()}
                 </span>
               </button>
@@ -72,7 +72,7 @@ export function WorkspaceBar({
                 type="button"
                 onClick={() => onRemove(f.id)}
                 aria-label={`Remove ${f.dataset.meta.fileName}`}
-                className="flex h-4 w-4 items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                className="flex h-4 w-4 items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:text-slate-500 dark:hover:bg-rose-500/15 dark:hover:text-rose-400"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -95,7 +95,7 @@ export function WorkspaceBar({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={parsing}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 disabled:opacity-50 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
         >
           {parsing ? `Parsing… ${progress}%` : '+ Add file'}
         </button>
@@ -109,7 +109,7 @@ export function WorkspaceBar({
       </div>
 
       {/* Mode toggle */}
-      <div className="ml-auto inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+      <div className="ml-auto inline-flex rounded-lg border border-slate-200 bg-slate-50 p-0.5 dark:border-slate-700 dark:bg-slate-800">
         {MODES.map((m) => (
           <button
             key={m.value}
@@ -118,8 +118,8 @@ export function WorkspaceBar({
             className={cn(
               'rounded-md px-3 py-1 text-sm font-medium transition-colors',
               mode === m.value
-                ? 'bg-white text-brand-700 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700',
+                ? 'bg-white text-brand-700 shadow-sm dark:bg-slate-700 dark:text-brand-300'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200',
             )}
           >
             {m.label}

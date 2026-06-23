@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import type { ColumnSchema, Dataset } from '@/types/dataset';
 import { datasetToCsv } from '@/lib/csv/exportCsv';
 import { downloadBlob } from '@/utils/downloadBlob';
+import { btnSecondary } from '@/utils/controls';
 
 /** `server-logs.csv` → `server-logs.filtered.csv` */
 function exportName(fileName: string): string {
@@ -29,7 +30,7 @@ export function ExportButton({ dataset, order, columns }: ExportButtonProps) {
       type="button"
       onClick={handleExport}
       disabled={order.length === 0}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+      className={`${btnSecondary} disabled:cursor-not-allowed disabled:opacity-40`}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

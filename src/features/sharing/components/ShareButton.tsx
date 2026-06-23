@@ -33,13 +33,13 @@ export function ShareButton({ getView }: ShareButtonProps) {
       className={cn(
         'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
         copied
-          ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-          : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
+          ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/15 dark:text-emerald-300'
+          : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
       )}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-4 w-4 text-slate-400"
+        className="h-4 w-4 text-slate-400 dark:text-slate-500"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"

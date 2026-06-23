@@ -5,10 +5,10 @@ import { formatNumber as fmt } from '@/utils/formatNumber';
 import { useColumnStats } from '../hooks/useColumnStats';
 
 const TYPE_BADGE: Record<ColumnType, string> = {
-  string: 'bg-slate-100 text-slate-600',
-  number: 'bg-sky-100 text-sky-700',
-  boolean: 'bg-amber-100 text-amber-700',
-  date: 'bg-violet-100 text-violet-700',
+  string: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+  number: 'bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300',
+  boolean: 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300',
+  date: 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300',
 };
 
 export interface StatsPanelProps {
@@ -17,22 +17,24 @@ export interface StatsPanelProps {
   order: number[];
 }
 
+const numCell = 'px-3 py-2 text-right font-mono tabular-nums text-slate-600 dark:text-slate-300';
+
 export function StatsPanel({ dataset, order }: StatsPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const stats = useColumnStats(dataset, order, expanded);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
         aria-expanded={expanded}
-        className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50"
+        className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
       >
-        <span className="text-sm font-semibold text-slate-700">
+        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
           Column statistics
         </span>
-        <span className="flex items-center gap-2 text-xs text-slate-400">
+        <span className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
           {dataset.columns.length} columns · {order.length.toLocaleString()} rows
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -53,9 +55,9 @@ export function StatsPanel({ dataset, order }: StatsPanelProps) {
       </button>
 
       {expanded && stats && (
-        <div className="max-h-[40vh] overflow-auto border-t border-slate-100">
+        <div className="max-h-[40vh] overflow-auto border-t border-slate-100 dark:border-slate-800">
           <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-slate-50 text-xs font-semibold text-slate-500">
+            <thead className="sticky top-0 bg-slate-50 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
               <tr>
                 <th className="px-4 py-2 text-left">Column</th>
                 <th className="px-3 py-2 text-left">Type</th>
@@ -67,10 +69,12 @@ export function StatsPanel({ dataset, order }: StatsPanelProps) {
                 <th className="px-3 py-2 text-right">Max</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {stats.map((s) => (
-                <tr key={s.key} className="hover:bg-brand-50/40">
-                  <td className="px-4 py-2 font-medium text-slate-700">{s.name}</td>
+                <tr key={s.key} className="hover:bg-brand-50/40 dark:hover:bg-slate-800/50">
+                  <td className="px-4 py-2 font-medium text-slate-700 dark:text-slate-200">
+                    {s.name}
+                  </td>
                   <td className="px-3 py-2">
                     <span
                       className={cn(
@@ -81,30 +85,24 @@ export function StatsPanel({ dataset, order }: StatsPanelProps) {
                       {s.type}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-600">
-                    {fmt(s.count)}
-                  </td>
+                  <td className={numCell}>{fmt(s.count)}</td>
                   <td
                     className={cn(
                       'px-3 py-2 text-right font-mono tabular-nums',
-                      s.nullCount > 0 ? 'text-rose-500' : 'text-slate-300',
+                      s.nullCount > 0
+                        ? 'text-rose-500 dark:text-rose-400'
+                        : 'text-slate-300 dark:text-slate-600',
                     )}
                   >
                     {fmt(s.nullCount)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-600">
+                  <td className={numCell}>
                     {fmt(s.distinctCount)}
                     {s.distinctCapped && '+'}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-600">
-                    {s.numeric ? fmt(s.numeric.min) : '—'}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-600">
-                    {s.numeric ? fmt(s.numeric.mean) : '—'}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums text-slate-600">
-                    {s.numeric ? fmt(s.numeric.max) : '—'}
-                  </td>
+                  <td className={numCell}>{s.numeric ? fmt(s.numeric.min) : '—'}</td>
+                  <td className={numCell}>{s.numeric ? fmt(s.numeric.mean) : '—'}</td>
+                  <td className={numCell}>{s.numeric ? fmt(s.numeric.max) : '—'}</td>
                 </tr>
               ))}
             </tbody>
