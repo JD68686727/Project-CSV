@@ -11,6 +11,7 @@ import { ColumnManager } from '@/features/table/components/ColumnManager';
 import { ExportButton } from '@/features/export/components/ExportButton';
 import { ShareButton } from '@/features/sharing/components/ShareButton';
 import { StatsPanel } from '@/features/stats/components/StatsPanel';
+import { PivotPanel } from '@/features/pivot/components/PivotPanel';
 import { useChartConfig } from '@/features/visualization/hooks/useChartConfig';
 import { usePresets } from '@/features/presets/hooks/usePresets';
 import { PresetBar } from '@/features/presets/components/PresetBar';
@@ -181,6 +182,12 @@ export function DataWorkspace({
           <ChartPanel dataset={dataset} chart={chart} />
         </Suspense>
       </ErrorBoundary>
+
+      <PivotPanel
+        dataset={dataset}
+        order={filteredOrder}
+        onAddFilter={filtersApi.addColumnFilter}
+      />
     </div>
   );
 }
