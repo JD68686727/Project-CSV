@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Dataset, ColumnType } from '@/types/dataset';
 import { cn } from '@/utils/cn';
 import { formatNumber as fmt } from '@/utils/formatNumber';
+import { computeColumnDistributions } from '@/lib/stats/distribution';
 import { useColumnStats } from '../hooks/useColumnStats';
+import { MiniDistribution } from './MiniDistribution';
 
 const TYPE_BADGE: Record<ColumnType, string> = {
   string: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
@@ -22,6 +24,10 @@ const numCell = 'px-3 py-2 text-right font-mono tabular-nums text-slate-600 dark
 export function StatsPanel({ dataset, order }: StatsPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const stats = useColumnStats(dataset, order, expanded);
+  const distributions = useMemo(
+    () => (expanded ? computeColumnDistributions(dataset, order) : null),
+    [expanded, dataset, order],
+  );
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -67,10 +73,11 @@ export function StatsPanel({ dataset, order }: StatsPanelProps) {
                 <th className="px-3 py-2 text-right">Min</th>
                 <th className="px-3 py-2 text-right">Mean</th>
                 <th className="px-3 py-2 text-right">Max</th>
+                <th className="px-3 py-2 text-left">Distribution</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {stats.map((s) => (
+              {stats.map((s, i) => (
                 <tr key={s.key} className="hover:bg-brand-50/40 dark:hover:bg-slate-800/50">
                   <td className="px-4 py-2 font-medium text-slate-700 dark:text-slate-200">
                     {s.name}
@@ -103,6 +110,9 @@ export function StatsPanel({ dataset, order }: StatsPanelProps) {
                   <td className={numCell}>{s.numeric ? fmt(s.numeric.min) : '—'}</td>
                   <td className={numCell}>{s.numeric ? fmt(s.numeric.mean) : '—'}</td>
                   <td className={numCell}>{s.numeric ? fmt(s.numeric.max) : '—'}</td>
+                  <td className="px-3 py-2">
+                    {distributions && <MiniDistribution dist={distributions[i]} />}
+                  </td>
                 </tr>
               ))}
             </tbody>

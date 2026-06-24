@@ -20,3 +20,14 @@ export interface ColumnStats {
   /** Present only for numeric columns with at least one parseable value. */
   numeric: NumericStats | null;
 }
+
+export interface TopValue {
+  value: string;
+  count: number;
+}
+
+/** Compact per-column distribution for the stats panel. */
+export type ColumnDistribution =
+  | { kind: 'numeric'; bins: number[]; min: number; max: number }
+  | { kind: 'categorical'; top: TopValue[]; othersCount: number; total: number }
+  | { kind: 'empty' };
