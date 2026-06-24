@@ -8,7 +8,7 @@ import { useSortedRows } from '@/features/table/hooks/useSortedRows';
 import { DataTable } from '@/features/table/components/DataTable';
 import { useColumnView } from '@/features/table/hooks/useColumnView';
 import { ColumnManager } from '@/features/table/components/ColumnManager';
-import { ExportButton } from '@/features/export/components/ExportButton';
+import { ExportMenu } from '@/features/export/components/ExportMenu';
 import { ShareButton } from '@/features/sharing/components/ShareButton';
 import { StatsPanel } from '@/features/stats/components/StatsPanel';
 import { PivotPanel } from '@/features/pivot/components/PivotPanel';
@@ -144,7 +144,7 @@ export function DataWorkspace({
         />
         <div className="flex items-center gap-2">
           <ShareButton getView={getView} />
-          <ExportButton
+          <ExportMenu
             dataset={dataset}
             order={order}
             columns={visibleColumns}
