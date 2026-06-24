@@ -1,0 +1,22 @@
+import type { CellValue, ColumnSchema, Dataset } from '@/types/dataset';
+
+/**
+ * Serializes the rows referenced by `order` (the current filtered + sorted
+ * display order) to a pretty-printed JSON array of objects, keyed by column
+ * name and limited to `columns` (defaults to all) — so the export mirrors the
+ * visible table. null cells stay JSON `null`. Operating through the index array
+ * means only the exported view is materialized.
+ */
+export function datasetToJson(
+  dataset: Dataset,
+  order: number[],
+  columns: ColumnSchema[] = dataset.columns,
+): string {
+  const data = order.map((rowIdx) => {
+    const row = dataset.rows[rowIdx];
+    const obj: Record<string, CellValue> = {};
+    for (const c of columns) obj[c.name] = row[dataset.columnIndex[c.key]];
+    return obj;
+  });
+  return JSON.stringify(data, null, 2);
+}
