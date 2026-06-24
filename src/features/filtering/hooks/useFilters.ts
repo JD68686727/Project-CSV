@@ -11,6 +11,8 @@ const nextId = () => `filter-${++idCounter}`;
 export interface UseFilters {
   filters: ColumnFilter[];
   addFilter: () => void;
+  /** Appends a fully-specified filter (e.g. from a distribution drill-down). */
+  addColumnFilter: (filter: Omit<ColumnFilter, 'id'>) => void;
   updateFilter: (id: string, patch: Partial<ColumnFilter>) => void;
   removeFilter: (id: string) => void;
   clearFilters: () => void;
@@ -40,6 +42,10 @@ export function useFilters(dataset: Dataset | null): UseFilters {
     ]);
   }, [dataset]);
 
+  const addColumnFilter = useCallback((filter: Omit<ColumnFilter, 'id'>) => {
+    setFilters((prev) => [...prev, { ...filter, id: nextId() }]);
+  }, []);
+
   const updateFilter = useCallback((id: string, patch: Partial<ColumnFilter>) => {
     setFilters((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
   }, []);
@@ -66,6 +72,7 @@ export function useFilters(dataset: Dataset | null): UseFilters {
   return {
     filters,
     addFilter,
+    addColumnFilter,
     updateFilter,
     removeFilter,
     clearFilters,

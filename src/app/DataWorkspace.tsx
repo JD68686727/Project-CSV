@@ -144,7 +144,11 @@ export function DataWorkspace({
         </div>
       </div>
 
-      <StatsPanel dataset={dataset} order={filteredOrder} />
+      <StatsPanel
+        dataset={dataset}
+        order={filteredOrder}
+        onAddFilter={filtersApi.addColumnFilter}
+      />
 
       <DataTable
         dataset={dataset}

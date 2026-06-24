@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Dataset, ColumnType } from '@/types/dataset';
+import type { ColumnFilter } from '@/types/filter';
 import { cn } from '@/utils/cn';
 import { formatNumber as fmt } from '@/utils/formatNumber';
 import { computeColumnDistributions } from '@/lib/stats/distribution';
+import { Popover } from '@/components/Popover';
 import { useColumnStats } from '../hooks/useColumnStats';
 import { MiniDistribution } from './MiniDistribution';
+import { DistributionDetail } from './DistributionDetail';
 
 const TYPE_BADGE: Record<ColumnType, string> = {
   string: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
@@ -17,23 +21,51 @@ export interface StatsPanelProps {
   dataset: Dataset;
   /** Filtered row indices to profile (sorting is irrelevant to stats). */
   order: number[];
+  /** When provided, distributions become clickable to drill into a filter. */
+  onAddFilter?: (filter: Omit<ColumnFilter, 'id'>) => void;
 }
 
 const numCell = 'px-3 py-2 text-right font-mono tabular-nums text-slate-600 dark:text-slate-300';
 
-export function StatsPanel({ dataset, order }: StatsPanelProps) {
+export function StatsPanel({ dataset, order, onAddFilter }: StatsPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const [open, setOpen] = useState<{ key: string; anchor: HTMLElement } | null>(
+    null,
+  );
   const stats = useColumnStats(dataset, order, expanded);
   const distributions = useMemo(
     () => (expanded ? computeColumnDistributions(dataset, order) : null),
     [expanded, dataset, order],
   );
 
+  let popover: ReactNode = null;
+  if (open && stats && distributions && onAddFilter) {
+    const idx = stats.findIndex((s) => s.key === open.key);
+    if (idx >= 0) {
+      const col = stats[idx];
+      popover = (
+        <Popover anchor={open.anchor} onClose={() => setOpen(null)}>
+          <DistributionDetail
+            column={{ key: col.key, name: col.name, type: col.type }}
+            dist={distributions[idx]}
+            onPick={(filter) => {
+              onAddFilter(filter);
+              setOpen(null);
+            }}
+          />
+        </Popover>
+      );
+    }
+  }
+
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <button
         type="button"
-        onClick={() => setExpanded((e) => !e)}
+        onClick={() => {
+          setExpanded((e) => !e);
+          setOpen(null);
+        }}
         aria-expanded={expanded}
         className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800"
       >
@@ -111,7 +143,26 @@ export function StatsPanel({ dataset, order }: StatsPanelProps) {
                   <td className={numCell}>{s.numeric ? fmt(s.numeric.mean) : '—'}</td>
                   <td className={numCell}>{s.numeric ? fmt(s.numeric.max) : '—'}</td>
                   <td className="px-3 py-2">
-                    {distributions && <MiniDistribution dist={distributions[i]} />}
+                    {distributions &&
+                      (distributions[i].kind === 'empty' || !onAddFilter ? (
+                        <MiniDistribution dist={distributions[i]} />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) =>
+                            setOpen((o) =>
+                              o?.key === s.key
+                                ? null
+                                : { key: s.key, anchor: e.currentTarget },
+                            )
+                          }
+                          aria-label={`Show ${s.name} distribution`}
+                          aria-expanded={open?.key === s.key}
+                          className="rounded transition hover:ring-2 hover:ring-brand-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                        >
+                          <MiniDistribution dist={distributions[i]} />
+                        </button>
+                      ))}
                   </td>
                 </tr>
               ))}
@@ -119,6 +170,8 @@ export function StatsPanel({ dataset, order }: StatsPanelProps) {
           </table>
         </div>
       )}
+
+      {popover}
     </div>
   );
 }
