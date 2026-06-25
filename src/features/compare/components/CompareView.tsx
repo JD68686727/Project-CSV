@@ -5,6 +5,7 @@ import { cn } from '@/utils/cn';
 import { selectCls } from '@/utils/controls';
 import { useCompareConfig } from '../hooks/useCompareConfig';
 import { CompareChart } from './CompareChart';
+import { CompareDiff } from './CompareDiff';
 import { CompareFileRow } from './CompareFileRow';
 
 const CHART_TYPES: { value: CompareChartType; label: string }[] = [
@@ -90,6 +91,8 @@ export function CompareView({ files }: CompareViewProps) {
           ))}
         </div>
       </div>
+
+      <CompareDiff a={files[0].dataset} b={files[1].dataset} />
 
       {noCommon ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
