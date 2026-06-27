@@ -70,6 +70,12 @@ export function WorkspaceBar({
                 <span className="text-xs text-slate-400 dark:text-slate-500">
                   {f.dataset.meta.rowCount.toLocaleString()}
                 </span>
+                {f.dataset.meta.encoding &&
+                  f.dataset.meta.encoding !== 'utf-8' && (
+                    <span className="rounded bg-amber-100 px-1 text-[10px] font-semibold uppercase text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+                      {f.dataset.meta.encoding}
+                    </span>
+                  )}
               </button>
               <button
                 type="button"

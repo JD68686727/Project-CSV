@@ -9,7 +9,11 @@ export function normalizeHeaders(
   const seen = new Map<string, number>();
 
   return rawHeaders.map((raw, i) => {
-    const name = (raw ?? '').trim() || `column_${i + 1}`;
+    // A UTF-8 BOM (U+FEFF) survives FileReader's text decode and clings to the
+    // first header — strip it so the key isn't corrupted.
+    const cleaned =
+      raw && raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : (raw ?? '');
+    const name = cleaned.trim() || `column_${i + 1}`;
 
     const base =
       name
