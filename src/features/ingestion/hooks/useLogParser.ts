@@ -1,7 +1,8 @@
 import { useCallback, useReducer, useRef } from 'react';
-import Papa, { type ParseResult, type Parser } from 'papaparse';
+import Papa from 'papaparse';
 import type { Dataset, ParseError, ParseState } from '@/types/dataset';
 import { assembleDataset } from '@/lib/csv/assembleDataset';
+import { decodeBytes, detectEncoding, type Encoding } from '@/lib/csv/encoding';
 
 // --- Configuration ----------------------------------------------------------
 
@@ -72,91 +73,129 @@ export function useLogParser(): UseLogParser {
     let detectedDelimiter = '';
     let truncated = false;
 
-    Papa.parse<string[]>(file, {
-      worker: true, // offload parsing to a Web Worker → UI stays responsive
-      skipEmptyLines: 'greedy',
-      delimiter: '', // let PapaParse auto-detect
-      // We don't use `header: true` because we want full control over header
-      // normalization and to keep rows as flat arrays for memory efficiency.
+    const collectErrors = (errs: { code?: string; message: string; row?: number }[]) => {
+      for (const err of errs) {
+        errors.push({ code: err.code ?? 'PARSE_ERROR', message: err.message, row: err.row });
+      }
+    };
 
-      chunk: (results: ParseResult<string[]>, parser: Parser) => {
-        if (isStale()) {
-          parser.abort();
-          return;
+    /** Appends parsed rows; the first row is the header. Returns true at the cap. */
+    const ingestRows = (data: string[][]): boolean => {
+      let startIdx = 0;
+      if (headers.length === 0 && data.length > 0) {
+        headers = data[0];
+        startIdx = 1;
+      }
+      for (let i = startIdx; i < data.length; i++) {
+        if (rawRows.length >= MAX_ROWS) {
+          truncated = true;
+          return true;
         }
+        rawRows.push(data[i]);
+      }
+      return false;
+    };
 
-        if (!detectedDelimiter && results.meta.delimiter) {
-          detectedDelimiter = results.meta.delimiter;
-        }
+    const commit = (encoding: Encoding) => {
+      if (isStale()) return;
+      if (headers.length === 0) {
+        dispatch({
+          type: 'ERROR',
+          errors: [
+            {
+              code: 'EMPTY_FILE',
+              message: 'The file appears to be empty or has no header row.',
+            },
+          ],
+        });
+        return;
+      }
+      const dataset: Dataset = assembleDataset(headers, rawRows, {
+        fileName: file.name,
+        fileSize: file.size,
+        delimiter: detectedDelimiter || ',',
+        truncated,
+        encoding,
+      });
+      dispatch({ type: 'SUCCESS', dataset, errors });
+    };
 
-        const data = results.data;
-        let startIdx = 0;
-
-        // First non-empty row of the whole file is the header.
-        if (headers.length === 0 && data.length > 0) {
-          headers = data[0];
-          startIdx = 1;
-        }
-
-        for (let i = startIdx; i < data.length; i++) {
-          if (rawRows.length >= MAX_ROWS) {
-            truncated = true;
+    // UTF-8 keeps the streaming Web Worker path (low memory on huge files); the
+    // other encodings are read fully, re-decoded, then parsed from the string.
+    const streamUtf8 = () => {
+      Papa.parse<string[]>(file, {
+        worker: true,
+        skipEmptyLines: 'greedy',
+        delimiter: '',
+        chunk: (results, parser) => {
+          if (isStale()) {
             parser.abort();
-            break;
+            return;
           }
-          rawRows.push(data[i]);
-        }
+          if (!detectedDelimiter && results.meta.delimiter) {
+            detectedDelimiter = results.meta.delimiter;
+          }
+          const hitCap = ingestRows(results.data);
+          collectErrors(results.errors);
+          if (hitCap) {
+            parser.abort();
+            return;
+          }
+          const cursor = results.meta.cursor ?? 0;
+          if (file.size > 0) {
+            dispatch({
+              type: 'PROGRESS',
+              progress: Math.min(99, Math.round((cursor / file.size) * 100)),
+            });
+          }
+        },
+        complete: () => commit('utf-8'),
+        error: (err: Error) => {
+          if (!isStale()) {
+            dispatch({ type: 'ERROR', errors: [{ code: 'FATAL', message: err.message }] });
+          }
+        },
+      });
+    };
 
-        for (const err of results.errors) {
-          errors.push({
-            code: err.code ?? 'PARSE_ERROR',
-            message: err.message,
-            row: err.row,
-          });
-        }
+    const parseDecoded = (text: string, encoding: Encoding) => {
+      const res = Papa.parse<string[]>(text, {
+        skipEmptyLines: 'greedy',
+        delimiter: '',
+      });
+      if (isStale()) return;
+      detectedDelimiter = res.meta.delimiter || '';
+      ingestRows(res.data);
+      collectErrors(res.errors);
+      commit(encoding);
+    };
 
-        // Progress is best-effort: PapaParse exposes cursor (bytes read).
-        const cursor = results.meta.cursor ?? 0;
-        if (file.size > 0) {
-          const progress = Math.min(99, Math.round((cursor / file.size) * 100));
-          dispatch({ type: 'PROGRESS', progress });
-        }
-      },
-
-      complete: () => {
+    void (async () => {
+      try {
+        const head = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
         if (isStale()) return;
-
-        if (headers.length === 0) {
+        const { encoding } = detectEncoding(head);
+        if (encoding === 'utf-8') {
+          streamUtf8();
+        } else {
+          const text = decodeBytes(await file.arrayBuffer(), encoding);
+          if (isStale()) return;
+          parseDecoded(text, encoding);
+        }
+      } catch (e) {
+        if (!isStale()) {
           dispatch({
             type: 'ERROR',
             errors: [
               {
-                code: 'EMPTY_FILE',
-                message: 'The file appears to be empty or has no header row.',
+                code: 'FATAL',
+                message: e instanceof Error ? e.message : 'Could not read the file.',
               },
             ],
           });
-          return;
         }
-
-        const dataset: Dataset = assembleDataset(headers, rawRows, {
-          fileName: file.name,
-          fileSize: file.size,
-          delimiter: detectedDelimiter || ',',
-          truncated,
-        });
-
-        dispatch({ type: 'SUCCESS', dataset, errors });
-      },
-
-      error: (err: Error) => {
-        if (isStale()) return;
-        dispatch({
-          type: 'ERROR',
-          errors: [{ code: 'FATAL', message: err.message }],
-        });
-      },
-    });
+      }
+    })();
   }, []);
 
   const reset = useCallback(() => {

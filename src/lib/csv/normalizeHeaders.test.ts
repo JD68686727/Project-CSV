@@ -28,4 +28,12 @@ describe('normalizeHeaders', () => {
   it('collapses runs of special characters into single underscores', () => {
     expect(normalizeHeaders(['a..b--c'])[0].key).toBe('a_b_c');
   });
+
+  it('strips a leading UTF-8 BOM from the first header', () => {
+    const bom = String.fromCharCode(0xfeff);
+    expect(normalizeHeaders([`${bom}timestamp`, 'level'])).toEqual([
+      { name: 'timestamp', key: 'timestamp' },
+      { name: 'level', key: 'level' },
+    ]);
+  });
 });

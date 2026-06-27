@@ -42,6 +42,8 @@ export interface DatasetMeta {
   delimiter: string;
   /** True when the file exceeded MAX_ROWS and we stopped early. */
   truncated: boolean;
+  /** Detected text encoding (e.g. "utf-8", "utf-16le", "windows-1252"). */
+  encoding?: string;
 }
 
 export interface Dataset {

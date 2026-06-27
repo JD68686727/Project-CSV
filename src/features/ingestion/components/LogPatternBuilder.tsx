@@ -5,6 +5,12 @@ import type { SavedLogPattern } from '@/types/logPattern';
 import { cn } from '@/utils/cn';
 import { btnSecondary, inputCls } from '@/utils/controls';
 import { assembleDataset } from '@/lib/csv/assembleDataset';
+import {
+  decodeBytes,
+  detectEncoding,
+  readFileSmart,
+  stripBom,
+} from '@/lib/csv/encoding';
 import { compilePattern, parseLogText } from '@/lib/log/regexParser';
 import { ACCEPTED } from '../acceptedTypes';
 import { useLogPatterns } from '../hooks/useLogPatterns';
@@ -116,8 +122,11 @@ export function LogPatternBuilder({ onDataset, onClose }: LogPatternBuilderProps
   const loadFromFile = async (f: File) => {
     setFile(f);
     setParseError(null);
-    const head = await f.slice(0, 64 * 1024).text();
-    setSample(head.split(/\r?\n/).slice(0, 50).join('\n'));
+    // Decode the head with the detected encoding so the sample reads correctly.
+    const headBuf = await f.slice(0, 64 * 1024).arrayBuffer();
+    const { encoding } = detectEncoding(new Uint8Array(headBuf));
+    const text = stripBom(decodeBytes(headBuf, encoding));
+    setSample(text.split(/\r?\n/).slice(0, 50).join('\n'));
   };
 
   const handleParse = async () => {
@@ -125,7 +134,8 @@ export function LogPatternBuilder({ onDataset, onClose }: LogPatternBuilderProps
     setBusy(true);
     setParseError(null);
     try {
-      const result = parseLogText(await file.text(), { regex, flags });
+      const { text, encoding } = await readFileSmart(file);
+      const result = parseLogText(text, { regex, flags });
       if (result.rows.length === 0) {
         setParseError('No lines in the file matched the pattern.');
         return;
@@ -136,6 +146,7 @@ export function LogPatternBuilder({ onDataset, onClose }: LogPatternBuilderProps
           fileSize: file.size,
           delimiter: '',
           truncated: result.truncated,
+          encoding,
         }),
       );
       onClose();

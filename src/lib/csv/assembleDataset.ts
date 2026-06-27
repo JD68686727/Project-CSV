@@ -34,6 +34,7 @@ export interface DatasetMetaInput {
   fileSize: number;
   delimiter: string;
   truncated: boolean;
+  encoding?: string;
 }
 
 /**
@@ -70,6 +71,7 @@ export function assembleDataset(
       rowCount: rows.length,
       delimiter: meta.delimiter,
       truncated: meta.truncated,
+      encoding: meta.encoding,
     },
   };
 }
