@@ -1,10 +1,12 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import type { Dataset } from '@/types/dataset';
 import type { SavedView } from '@/types/view';
 import type { ViewState } from '@/types/share';
 import { useFilters } from '@/features/filtering/hooks/useFilters';
 import { FilterBar } from '@/features/filtering/components/FilterBar';
 import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
+import { signatureFor } from '@/lib/storage/viewStore';
+import { getLastView, setLastView } from '@/lib/storage/lastViewStore';
 import { useSortedRows } from '@/features/table/hooks/useSortedRows';
 import { DataTable } from '@/features/table/components/DataTable';
 import { RowDetail } from '@/features/table/components/RowDetail';
@@ -78,26 +80,48 @@ export function DataWorkspace({
     [groups, query, sortKeys, chartConfig, columnViewState, pivotConfig],
   );
 
+  // Applies a full view (shared link / saved auto-view) through every stage.
+  const applyViewState = useCallback(
+    (view: ViewState) => {
+      replaceGroups(view.groups);
+      setQuery(view.query);
+      setSort(view.sort);
+      applyConfig(view.chart);
+      applyView(view.columns);
+      if (view.pivot) applyPivot(view.pivot);
+    },
+    [replaceGroups, setQuery, setSort, applyConfig, applyView, applyPivot],
+  );
+
   // Apply a view from a shared link once, now that the dataset exists.
   useEffect(() => {
     if (!pending) return;
-    replaceGroups(pending.groups);
-    setQuery(pending.query);
-    setSort(pending.sort);
-    applyConfig(pending.chart);
-    applyView(pending.columns);
-    if (pending.pivot) applyPivot(pending.pivot);
+    applyViewState(pending);
     onConsumePending();
-  }, [
-    pending,
-    replaceGroups,
-    setQuery,
-    setSort,
-    applyConfig,
-    applyView,
-    applyPivot,
-    onConsumePending,
-  ]);
+  }, [pending, applyViewState, onConsumePending]);
+
+  // --- "Pick up where you left off" -----------------------------------------
+  // Remember the last shaped view per schema signature (config only, never row
+  // data), and offer to restore it when a file with that structure loads again.
+  const signature = useMemo(() => signatureFor(dataset), [dataset]);
+  const [offered] = useState<ViewState | null>(() => getLastView(signature));
+  const [restoreDismissed, setRestoreDismissed] = useState(false);
+  const showRestore = !!offered && !pending && !restoreDismissed;
+  const offeredFilterCount =
+    offered?.groups.reduce((n, g) => n + g.filters.length, 0) ?? 0;
+
+  useEffect(() => {
+    const view = getView();
+    // Only remember a view the user actually shaped (filters / search / sort).
+    if (view.groups.length === 0 && view.query === '' && view.sort.length === 0) {
+      return;
+    }
+    const t = setTimeout(() => {
+      setLastView(signature, view);
+      setRestoreDismissed(true); // once they're working, drop the restore offer
+    }, 600);
+    return () => clearTimeout(t);
+  }, [getView, signature]);
 
   const handleApply = useCallback(
     (view: SavedView) => {
@@ -117,6 +141,38 @@ export function DataWorkspace({
 
   return (
     <div className="space-y-3">
+      {showRestore && offered && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm dark:border-brand-500/30 dark:bg-brand-500/10">
+          <span className="text-slate-700 dark:text-slate-200">
+            Welcome back — restore your last view for this file structure?{' '}
+            <span className="text-slate-400 dark:text-slate-500">
+              ({offeredFilterCount} filter{offeredFilterCount === 1 ? '' : 's'}
+              {offered.sort.length > 0 ? ' · sorted' : ''}
+              {offered.query ? ' · search' : ''})
+            </span>
+          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setRestoreDismissed(true)}
+              className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-200/60 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            >
+              Dismiss
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                applyViewState(offered);
+                setRestoreDismissed(true);
+              }}
+              className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              Restore last view
+            </button>
+          </div>
+        </div>
+      )}
+
       <PresetBar
         views={presets.views}
         onApply={handleApply}
