@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
-import type { Dataset } from '@/types/dataset';
+import type { ColumnType, Dataset } from '@/types/dataset';
 import type { LoadedFile } from '@/types/workspace';
+import { retypeColumn, applyTypeOverrides } from '@/lib/table/retypeColumn';
+import { getColumnOverrides, setColumnOverride } from '@/lib/storage/columnTypeStore';
 
 let idCounter = 0;
 const nextId = () => `file-${Date.now()}-${++idCounter}`;
@@ -11,6 +13,8 @@ export interface UseWorkspace {
   addDataset: (dataset: Dataset) => void;
   removeFile: (id: string) => void;
   setActive: (id: string) => void;
+  /** Override a column's inferred type; re-coerces cells and remembers it. */
+  setColumnType: (fileId: string, columnKey: string, type: ColumnType) => void;
 }
 
 /** Holds the collection of loaded files and which one is active in Analyze mode. */
@@ -19,7 +23,10 @@ export function useWorkspace(): UseWorkspace {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const addDataset = useCallback((dataset: Dataset) => {
-    const file: LoadedFile = { id: nextId(), dataset };
+    // Re-apply any type overrides remembered for this structure.
+    const overrides = getColumnOverrides(dataset);
+    const ds = applyTypeOverrides(dataset, overrides);
+    const file: LoadedFile = { id: nextId(), dataset: ds };
     setFiles((prev) => [...prev, file]);
     setActiveId(file.id); // a newly loaded file becomes active
   }, []);
@@ -30,10 +37,23 @@ export function useWorkspace(): UseWorkspace {
 
   const setActive = useCallback((id: string) => setActiveId(id), []);
 
+  const setColumnType = useCallback(
+    (fileId: string, columnKey: string, type: ColumnType) => {
+      setFiles((prev) =>
+        prev.map((f) => {
+          if (f.id !== fileId) return f;
+          setColumnOverride(f.dataset, columnKey, type); // keyed by stable column keys
+          return { ...f, dataset: retypeColumn(f.dataset, columnKey, type) };
+        }),
+      );
+    },
+    [],
+  );
+
   // Derive the active file with a fallback so removing the active one (which
   // leaves `activeId` stale) still resolves to a valid file.
   const activeFile =
     files.find((f) => f.id === activeId) ?? files[files.length - 1] ?? null;
 
-  return { files, activeFile, addDataset, removeFile, setActive };
+  return { files, activeFile, addDataset, removeFile, setActive, setColumnType };
 }

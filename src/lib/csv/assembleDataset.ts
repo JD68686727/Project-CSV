@@ -1,10 +1,16 @@
-import type { CellValue, ColumnSchema, Dataset, LogRow } from '@/types/dataset';
+import type {
+  CellValue,
+  ColumnSchema,
+  ColumnType,
+  Dataset,
+  LogRow,
+} from '@/types/dataset';
 import { inferSchema } from './inferSchema';
 
-/** Coerces a raw string cell to a typed CellValue based on the column schema. */
-function coerce(raw: string | undefined, column: ColumnSchema): CellValue {
+/** Coerces a raw string cell to a typed CellValue for the given column type. */
+export function coerceValue(raw: string | undefined, type: ColumnType): CellValue {
   if (raw == null || raw === '') return null;
-  switch (column.type) {
+  switch (type) {
     case 'number': {
       const n = Number(raw);
       return Number.isNaN(n) ? raw : n;
@@ -56,7 +62,7 @@ export function assembleDataset(
     const raw = rawRows[r];
     const row: LogRow = new Array(columns.length);
     for (let c = 0; c < columns.length; c++) {
-      row[c] = coerce(raw[c], columns[c]);
+      row[c] = coerceValue(raw[c], columns[c].type);
     }
     rows[r] = row;
   }

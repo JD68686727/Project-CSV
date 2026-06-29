@@ -7,9 +7,9 @@ import { ColumnManager } from './ColumnManager';
 import type { ColumnManagerItem } from '../hooks/useColumnView';
 
 const baseItems: ColumnManagerItem[] = [
-  { key: 'a', name: 'Alpha', visible: true },
-  { key: 'b', name: 'Beta', visible: true },
-  { key: 'c', name: 'Gamma', visible: false },
+  { key: 'a', name: 'Alpha', visible: true, type: 'string' },
+  { key: 'b', name: 'Beta', visible: true, type: 'number' },
+  { key: 'c', name: 'Gamma', visible: false, type: 'string' },
 ];
 
 function renderManager(items: ColumnManagerItem[] = baseItems) {
@@ -44,8 +44,8 @@ describe('ColumnManager', () => {
   it('disables the last visible column so one always remains', async () => {
     const user = userEvent.setup();
     renderManager([
-      { key: 'a', name: 'Alpha', visible: true },
-      { key: 'b', name: 'Beta', visible: false },
+      { key: 'a', name: 'Alpha', visible: true, type: 'string' },
+      { key: 'b', name: 'Beta', visible: false, type: 'string' },
     ]);
     await user.click(screen.getByRole('button', { name: /Columns/ }));
     expect(screen.getByRole('checkbox', { name: 'Alpha' })).toBeDisabled();

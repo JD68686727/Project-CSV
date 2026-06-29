@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import type { Dataset } from '@/types/dataset';
+import type { ColumnType, Dataset } from '@/types/dataset';
 import type { SavedView } from '@/types/view';
 import type { ViewState } from '@/types/share';
 import { useFilters } from '@/features/filtering/hooks/useFilters';
@@ -37,6 +37,8 @@ export interface DataWorkspaceProps {
   /** A view from a shared link, applied once after this mounts. */
   pending: ViewState | null;
   onConsumePending: () => void;
+  /** Override a column's inferred type on the active file. */
+  onRetypeColumn: (columnKey: string, type: ColumnType) => void;
 }
 
 /**
@@ -50,6 +52,7 @@ export function DataWorkspace({
   dataset,
   pending,
   onConsumePending,
+  onRetypeColumn,
 }: DataWorkspaceProps) {
   const filtersApi = useFilters(dataset);
   const chart = useChartConfig(dataset, filtersApi.filteredOrder);
@@ -202,6 +205,7 @@ export function DataWorkspace({
           onMove={columnView.move}
           onShowAll={columnView.showAll}
           onReset={columnView.reset}
+          onRetype={onRetypeColumn}
         />
         <div className="flex items-center gap-2">
           <ShareButton getView={getView} />

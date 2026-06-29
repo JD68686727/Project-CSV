@@ -126,6 +126,9 @@ export function App() {
                 dataset={ws.activeFile.dataset}
                 pending={shared.pending}
                 onConsumePending={shared.consume}
+                onRetypeColumn={(columnKey, type) =>
+                  ws.setColumnType(ws.activeFile!.id, columnKey, type)
+                }
               />
             )}
 
