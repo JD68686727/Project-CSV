@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { ColumnSchema, Dataset } from '@/types/dataset';
+import type { ColumnSchema, ColumnType, Dataset } from '@/types/dataset';
 import type { ColumnViewItem } from '@/types/table';
 import {
   initColumnView,
@@ -13,6 +13,7 @@ export interface ColumnManagerItem {
   key: string;
   name: string;
   visible: boolean;
+  type: ColumnType;
 }
 
 export interface UseColumnView {
@@ -48,6 +49,7 @@ export function useColumnView(dataset: Dataset): UseColumnView {
         key: i.key,
         name: byKey.get(i.key)?.name ?? i.key,
         visible: i.visible,
+        type: byKey.get(i.key)?.type ?? 'string',
       })),
     [view, byKey],
   );
