@@ -11,11 +11,15 @@ export function datasetToJson(
   dataset: Dataset,
   order: number[],
   columns: ColumnSchema[] = dataset.columns,
+  redact?: (cell: CellValue) => CellValue,
 ): string {
   const data = order.map((rowIdx) => {
     const row = dataset.rows[rowIdx];
     const obj: Record<string, CellValue> = {};
-    for (const c of columns) obj[c.name] = row[dataset.columnIndex[c.key]];
+    for (const c of columns) {
+      const cell = row[dataset.columnIndex[c.key]];
+      obj[c.name] = redact ? redact(cell) : cell;
+    }
     return obj;
   });
   return JSON.stringify(data, null, 2);
