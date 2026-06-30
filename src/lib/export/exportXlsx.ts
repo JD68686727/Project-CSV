@@ -19,6 +19,7 @@ export async function datasetToXlsxBlob(
   dataset: Dataset,
   order: number[],
   columns: ColumnSchema[] = dataset.columns,
+  redact?: (cell: CellValue) => CellValue,
 ): Promise<Blob> {
   const { utils, write } = await import('xlsx');
 
@@ -27,7 +28,12 @@ export async function datasetToXlsxBlob(
   ];
   for (const rowIdx of order) {
     const row = dataset.rows[rowIdx];
-    aoa.push(columns.map((c) => cell(row[dataset.columnIndex[c.key]])));
+    aoa.push(
+      columns.map((c) => {
+        const v = row[dataset.columnIndex[c.key]];
+        return cell(redact ? redact(v) : v);
+      }),
+    );
   }
 
   const worksheet = utils.aoa_to_sheet(aoa);

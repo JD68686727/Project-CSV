@@ -2,14 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ColumnSchema, Dataset } from '@/types/dataset';
 import { datasetToCsv } from '@/lib/csv/exportCsv';
 import { datasetToJson } from '@/lib/export/exportJson';
+import {
+  REDACTABLE,
+  makeCellRedactor,
+  type RedactionMode,
+} from '@/lib/export/redact';
 import { downloadBlob } from '@/utils/downloadBlob';
 import { btnSecondary } from '@/utils/controls';
 
-/** `server-logs.csv` → `server-logs.filtered.<ext>` */
-function exportName(fileName: string, ext: string): string {
+/** `server-logs.csv` → `server-logs.filtered[.redacted].<ext>` */
+function exportName(fileName: string, ext: string, redacted: boolean): string {
   const dot = fileName.lastIndexOf('.');
   const base = dot > 0 ? fileName.slice(0, dot) : fileName;
-  return `${base}.filtered.${ext}`;
+  return `${base}.filtered${redacted ? '.redacted' : ''}.${ext}`;
 }
 
 export interface ExportMenuProps {
@@ -23,10 +28,15 @@ export interface ExportMenuProps {
 const item =
   'flex w-full items-center justify-between gap-6 rounded-md px-3 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:text-slate-200 dark:hover:bg-slate-800';
 const ext = 'font-mono text-xs text-slate-400 dark:text-slate-500';
+const checkbox =
+  'h-3.5 w-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30 dark:border-slate-600 dark:bg-slate-700';
 
 export function ExportMenu({ dataset, order, columns }: ExportMenuProps) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [redact, setRedact] = useState(false);
+  const [cats, setCats] = useState<string[]>(() => REDACTABLE.map((r) => r.id));
+  const [mode, setMode] = useState<RedactionMode>('consistent');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,32 +49,45 @@ export function ExportMenu({ dataset, order, columns }: ExportMenuProps) {
   }, [open]);
 
   const name = dataset.meta.fileName;
+  const redacting = redact && cats.length > 0;
 
+  const toggleCat = (id: string) =>
+    setCats((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+    );
+
+  // A fresh redactor per export keeps consistent-dummy numbering per file.
   const exportCsv = useCallback(() => {
-    downloadBlob(exportName(name, 'csv'), datasetToCsv(dataset, order, columns));
+    const r = redacting ? makeCellRedactor(cats, mode) : undefined;
+    downloadBlob(exportName(name, 'csv', redacting), datasetToCsv(dataset, order, columns, r));
     setOpen(false);
-  }, [dataset, order, columns, name]);
+  }, [dataset, order, columns, name, redacting, cats, mode]);
 
   const exportJson = useCallback(() => {
+    const r = redacting ? makeCellRedactor(cats, mode) : undefined;
     downloadBlob(
-      exportName(name, 'json'),
-      datasetToJson(dataset, order, columns),
+      exportName(name, 'json', redacting),
+      datasetToJson(dataset, order, columns, r),
       'application/json',
     );
     setOpen(false);
-  }, [dataset, order, columns, name]);
+  }, [dataset, order, columns, name, redacting, cats, mode]);
 
   const exportXlsx = useCallback(async () => {
     setBusy(true);
     try {
+      const r = redacting ? makeCellRedactor(cats, mode) : undefined;
       // Lazy: SheetJS is fetched only on first Excel export.
       const { datasetToXlsxBlob } = await import('@/lib/export/exportXlsx');
-      downloadBlob(exportName(name, 'xlsx'), await datasetToXlsxBlob(dataset, order, columns));
+      downloadBlob(
+        exportName(name, 'xlsx', redacting),
+        await datasetToXlsxBlob(dataset, order, columns, r),
+      );
       setOpen(false);
     } finally {
       setBusy(false);
     }
-  }, [dataset, order, columns, name]);
+  }, [dataset, order, columns, name, redacting, cats, mode]);
 
   return (
     <div ref={ref} className="relative">
@@ -93,7 +116,60 @@ export function ExportMenu({ dataset, order, columns }: ExportMenuProps) {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-48 rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <div className="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+          <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-800">
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <input
+                type="checkbox"
+                checked={redact}
+                onChange={(e) => setRedact(e.target.checked)}
+                className={checkbox}
+              />
+              Redact sensitive values
+            </label>
+            {redact && (
+              <div className="mt-2 space-y-2 pl-6">
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {REDACTABLE.map((r) => (
+                    <label
+                      key={r.id}
+                      className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={cats.includes(r.id)}
+                        onChange={() => toggleCat(r.id)}
+                        className={checkbox}
+                      />
+                      {r.label}
+                    </label>
+                  ))}
+                </div>
+                <div className="flex gap-3 text-xs text-slate-600 dark:text-slate-300">
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="redact-mode"
+                      checked={mode === 'consistent'}
+                      onChange={() => setMode('consistent')}
+                      className="text-brand-600 focus:ring-brand-500/30"
+                    />
+                    Consistent (IP_1)
+                  </label>
+                  <label className="flex items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="redact-mode"
+                      checked={mode === 'token'}
+                      onChange={() => setMode('token')}
+                      className="text-brand-600 focus:ring-brand-500/30"
+                    />
+                    [REDACTED]
+                  </label>
+                </div>
+              </div>
+            )}
+          </div>
           <button type="button" onClick={exportCsv} aria-label="CSV" className={item}>
             CSV<span className={ext}>.csv</span>
           </button>

@@ -17,11 +17,15 @@ export function datasetToCsv(
   dataset: Dataset,
   order: number[],
   columns: ColumnSchema[] = dataset.columns,
+  redact?: (cell: CellValue) => CellValue,
 ): string {
   const fields = columns.map((c) => c.name);
   const data = order.map((rowIdx) => {
     const row = dataset.rows[rowIdx];
-    return columns.map((c) => cellToField(row[dataset.columnIndex[c.key]]));
+    return columns.map((c) => {
+      const cell = row[dataset.columnIndex[c.key]];
+      return cellToField(redact ? redact(cell) : cell);
+    });
   });
   return Papa.unparse({ fields, data });
 }
