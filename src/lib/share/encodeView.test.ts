@@ -12,6 +12,7 @@ const view: ViewState = {
     },
   ],
   query: 'payments',
+  searchRegex: true,
   sort: [{ columnKey: 'latency', direction: 'desc' }],
   chart: {
     type: 'bar',

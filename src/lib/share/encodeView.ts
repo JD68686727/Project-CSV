@@ -73,6 +73,7 @@ export function decodeView(token: string): ViewState | null {
     return {
       groups: normalizeFilterGroups(raw.groups, raw.filters),
       query: raw.query as string,
+      searchRegex: raw.searchRegex === true ? true : undefined,
       sort: normalizeSort(raw.sort),
       chart: raw.chart as ViewState['chart'],
       columns: raw.columns as ViewState['columns'],

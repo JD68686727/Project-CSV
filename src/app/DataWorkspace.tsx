@@ -4,7 +4,9 @@ import type { SavedView } from '@/types/view';
 import type { ViewState } from '@/types/share';
 import { useFilters } from '@/features/filtering/hooks/useFilters';
 import { FilterBar } from '@/features/filtering/components/FilterBar';
+import { ExtractPanel } from '@/features/filtering/components/ExtractPanel';
 import { normalizeFilterGroups } from '@/lib/filter/normalizeGroups';
+import type { QuickPattern } from '@/lib/filter/patternLibrary';
 import { signatureFor } from '@/lib/storage/viewStore';
 import { getLastView, setLastView } from '@/lib/storage/lastViewStore';
 import { useSortedRows } from '@/features/table/hooks/useSortedRows';
@@ -66,21 +68,25 @@ export function DataWorkspace({
   );
 
   const { replaceGroups, groups, filteredOrder, query, setQuery } = filtersApi;
+  const { searchRegex, setSearchRegex } = filtersApi;
   const { applyConfig, config: chartConfig } = chart;
   const { applyView, view: columnViewState, visible: visibleColumns } = columnView;
   const { applyConfig: applyPivot, config: pivotConfig } = pivot;
+
+  const [extractPattern, setExtractPattern] = useState<QuickPattern | null>(null);
 
   // The shareable view, built only when the Share button is clicked.
   const getView = useCallback(
     (): ViewState => ({
       groups,
       query,
+      searchRegex,
       sort: sortKeys,
       chart: chartConfig,
       columns: columnViewState,
       pivot: pivotConfig,
     }),
-    [groups, query, sortKeys, chartConfig, columnViewState, pivotConfig],
+    [groups, query, searchRegex, sortKeys, chartConfig, columnViewState, pivotConfig],
   );
 
   // Applies a full view (shared link / saved auto-view) through every stage.
@@ -88,12 +94,13 @@ export function DataWorkspace({
     (view: ViewState) => {
       replaceGroups(view.groups);
       setQuery(view.query);
+      setSearchRegex(view.searchRegex ?? false);
       setSort(view.sort);
       applyConfig(view.chart);
       applyView(view.columns);
       if (view.pivot) applyPivot(view.pivot);
     },
-    [replaceGroups, setQuery, setSort, applyConfig, applyView, applyPivot],
+    [replaceGroups, setQuery, setSearchRegex, setSort, applyConfig, applyView, applyPivot],
   );
 
   // Apply a view from a shared link once, now that the dataset exists.
@@ -194,9 +201,27 @@ export function DataWorkspace({
         onClear={filtersApi.clearFilters}
         query={query}
         onQueryChange={filtersApi.setQuery}
+        searchRegex={searchRegex}
+        onToggleRegex={() => setSearchRegex(!searchRegex)}
+        onQuickPattern={filtersApi.applyQuickPattern}
+        onExtract={setExtractPattern}
         resultCount={filteredOrder.length}
         totalCount={dataset.rows.length}
       />
+
+      {extractPattern && (
+        <ExtractPanel
+          dataset={dataset}
+          order={filteredOrder}
+          pattern={extractPattern}
+          onPickValue={(value) => {
+            setSearchRegex(false);
+            setQuery(value);
+            setExtractPattern(null);
+          }}
+          onClose={() => setExtractPattern(null)}
+        />
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <ColumnManager

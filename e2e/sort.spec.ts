@@ -20,7 +20,8 @@ test('multi-sort: shift-click adds a secondary sort with a priority badge', asyn
   await expect(page.getByRole('button', { name: /latency_ms/ })).toContainText('2');
 
   // level asc → ERROR first; latency asc within ERROR → 980 (/api/search) first.
-  const firstRow = page.locator('div.absolute').first();
+  // Virtualized body rows are absolutely-positioned grids (left-0).
+  const firstRow = page.locator('div.absolute.left-0').first();
   await expect(firstRow).toContainText('ERROR');
   await expect(firstRow).toContainText('980');
 });
