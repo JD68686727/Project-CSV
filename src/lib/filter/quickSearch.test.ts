@@ -46,4 +46,17 @@ describe('applyQuickSearch', () => {
     // row 4 has a null code; searching the empty-ish value must not throw/match.
     expect(applyQuickSearch(ds, [4], 'null')).toEqual([]);
   });
+
+  it('matches a regular expression in regex mode', () => {
+    // HTTP 4xx/5xx across any column.
+    expect(
+      applyQuickSearch(ds, allRows(ds), '\\b[45]\\d{2}\\b', { regex: true }),
+    ).toEqual([1, 2, 3]);
+  });
+
+  it('is a no-op for an invalid regex', () => {
+    expect(applyQuickSearch(ds, allRows(ds), '(', { regex: true })).toEqual([
+      0, 1, 2, 3, 4,
+    ]);
+  });
 });

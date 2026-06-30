@@ -12,6 +12,8 @@ export interface ViewState {
   /** Condition groups (AND within, OR between). */
   groups: FilterGroup[];
   query: string;
+  /** Treat `query` as a regular expression. Optional for back-compat. */
+  searchRegex?: boolean;
   /** Multi-column sort, primary first. */
   sort: SortKey[];
   chart: ChartConfig;

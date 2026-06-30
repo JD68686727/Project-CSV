@@ -4,6 +4,7 @@ import type { ColumnFilter, FilterGroup } from '@/types/filter';
 import { applyFilterGroups } from '@/lib/filter/applyFilters';
 import { applyQuickSearch } from '@/lib/filter/quickSearch';
 import { operatorsForType } from '@/lib/filter/operators';
+import type { QuickPattern } from '@/lib/filter/patternLibrary';
 
 let filterCounter = 0;
 const nextFilterId = () => `filter-${++filterCounter}`;
@@ -39,6 +40,11 @@ export interface UseFilters {
   /** Free-text "search across all columns" query (immediate, for the input). */
   query: string;
   setQuery: (query: string) => void;
+  /** Treat the search query as a regular expression. */
+  searchRegex: boolean;
+  setSearchRegex: (on: boolean) => void;
+  /** Applies a one-click pattern as a regex search. */
+  applyQuickPattern: (pattern: QuickPattern) => void;
   /** Row indices passing the filter groups AND the search. Memoized. */
   filteredOrder: number[];
 }
@@ -46,9 +52,15 @@ export interface UseFilters {
 export function useFilters(dataset: Dataset | null): UseFilters {
   const [groups, setGroups] = useState<FilterGroup[]>([]);
   const [query, setQuery] = useState('');
+  const [searchRegex, setSearchRegex] = useState(false);
   // Keep typing responsive on large files: the heavy re-filter uses a deferred
   // copy of the query so React can prioritise the input over recomputation.
   const deferredQuery = useDeferredValue(query);
+
+  const applyQuickPattern = useCallback((pattern: QuickPattern) => {
+    setQuery(pattern.regex);
+    setSearchRegex(true);
+  }, []);
 
   const addGroup = useCallback(() => {
     if (!dataset || dataset.columns.length === 0) return;
@@ -134,8 +146,10 @@ export function useFilters(dataset: Dataset | null): UseFilters {
     // Structured groups first (cheap predicates), then the cross-column search
     // on the survivors only.
     const structured = applyFilterGroups(dataset, groups);
-    return applyQuickSearch(dataset, structured, deferredQuery);
-  }, [dataset, groups, deferredQuery]);
+    return applyQuickSearch(dataset, structured, deferredQuery, {
+      regex: searchRegex,
+    });
+  }, [dataset, groups, deferredQuery, searchRegex]);
 
   return {
     groups,
@@ -149,6 +163,9 @@ export function useFilters(dataset: Dataset | null): UseFilters {
     addColumnFilter,
     query,
     setQuery,
+    searchRegex,
+    setSearchRegex,
+    applyQuickPattern,
     filteredOrder,
   };
 }
