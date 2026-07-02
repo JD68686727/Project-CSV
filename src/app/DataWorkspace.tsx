@@ -16,6 +16,7 @@ import { useColumnView } from '@/features/table/hooks/useColumnView';
 import { ColumnManager } from '@/features/table/components/ColumnManager';
 import { ExportMenu } from '@/features/export/components/ExportMenu';
 import { ShareButton } from '@/features/sharing/components/ShareButton';
+import { SecurityScanButton } from '@/features/security/components/SecurityScanButton';
 import { StatsPanel } from '@/features/stats/components/StatsPanel';
 import { PivotPanel } from '@/features/pivot/components/PivotPanel';
 import { usePivotConfig } from '@/features/pivot/hooks/usePivotConfig';
@@ -41,6 +42,8 @@ export interface DataWorkspaceProps {
   onConsumePending: () => void;
   /** Override a column's inferred type on the active file. */
   onRetypeColumn: (columnKey: string, type: ColumnType) => void;
+  /** Opens a derived dataset (e.g. a security scan's findings) as a new file. */
+  onOpenDataset?: (dataset: Dataset) => void;
 }
 
 /**
@@ -55,6 +58,7 @@ export function DataWorkspace({
   pending,
   onConsumePending,
   onRetypeColumn,
+  onOpenDataset,
 }: DataWorkspaceProps) {
   const filtersApi = useFilters(dataset);
   const chart = useChartConfig(dataset, filtersApi.filteredOrder);
@@ -233,6 +237,13 @@ export function DataWorkspace({
           onRetype={onRetypeColumn}
         />
         <div className="flex items-center gap-2">
+          {onOpenDataset && (
+            <SecurityScanButton
+              dataset={dataset}
+              order={filteredOrder}
+              onOpenDataset={onOpenDataset}
+            />
+          )}
           <ShareButton getView={getView} />
           <ExportMenu
             dataset={dataset}

@@ -5,6 +5,7 @@ import { useLogParser } from '@/features/ingestion/hooks/useLogParser';
 import { DropZone } from '@/features/ingestion/components/DropZone';
 import { ParseStatus } from '@/features/ingestion/components/ParseStatus';
 import { LogPatternBuilder } from '@/features/ingestion/components/LogPatternBuilder';
+import { ConfigAuditModal } from '@/features/config/components/ConfigAuditModal';
 import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 import { WorkspaceBar } from '@/features/workspace/components/WorkspaceBar';
 import { useSharedView } from '@/features/sharing/hooks/useSharedView';
@@ -27,15 +28,25 @@ export function App() {
   const { theme, setTheme } = useTheme();
   const [mode, setMode] = useState<WorkspaceMode>('analyze');
   const [showBuilder, setShowBuilder] = useState(false);
+  const [showAudit, setShowAudit] = useState(false);
   const lastAddedRef = useRef<Dataset | null>(null);
   const { addDataset } = ws;
 
-  // A dataset built by the custom-log regex parser bypasses the CSV parser and
-  // is added to the workspace directly.
-  const handleCustomDataset = (ds: Dataset) => {
+  // A derived dataset (custom-log parse, security-scan findings, config audit)
+  // bypasses the CSV parser and is added to the workspace directly.
+  const openDerivedDataset = (ds: Dataset) => {
     addDataset(ds);
     setMode('analyze');
+  };
+
+  const handleCustomDataset = (ds: Dataset) => {
+    openDerivedDataset(ds);
     setShowBuilder(false);
+  };
+
+  const handleAuditDataset = (ds: Dataset) => {
+    openDerivedDataset(ds);
+    setShowAudit(false);
   };
 
   // When a parse completes, move the dataset into the workspace and clear the
@@ -95,6 +106,16 @@ export function App() {
                 Build a custom log format
               </button>
             </p>
+            <p className="mt-1 text-center text-sm text-slate-500 dark:text-slate-400">
+              Have a server config (SSH, INI…)?{' '}
+              <button
+                type="button"
+                onClick={() => setShowAudit(true)}
+                className="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+              >
+                Audit it for hardening issues
+              </button>
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -109,6 +130,7 @@ export function App() {
               onRemove={ws.removeFile}
               onAddFile={parseFile}
               onCustomLog={() => setShowBuilder(true)}
+              onAuditConfig={() => setShowAudit(true)}
             />
 
             {status === 'error' && (
@@ -129,6 +151,7 @@ export function App() {
                 onRetypeColumn={(columnKey, type) =>
                   ws.setColumnType(ws.activeFile!.id, columnKey, type)
                 }
+                onOpenDataset={openDerivedDataset}
               />
             )}
 
@@ -169,6 +192,13 @@ export function App() {
         <LogPatternBuilder
           onDataset={handleCustomDataset}
           onClose={() => setShowBuilder(false)}
+        />
+      )}
+
+      {showAudit && (
+        <ConfigAuditModal
+          onFindings={handleAuditDataset}
+          onClose={() => setShowAudit(false)}
         />
       )}
     </div>

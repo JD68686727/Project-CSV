@@ -3,6 +3,7 @@ import Papa from 'papaparse';
 import type { Dataset, ParseError, ParseState } from '@/types/dataset';
 import { assembleDataset } from '@/lib/csv/assembleDataset';
 import { decodeBytes, detectEncoding, type Encoding } from '@/lib/csv/encoding';
+import { detectAdapter } from '@/lib/ingest/adapters/registry';
 
 // --- Configuration ----------------------------------------------------------
 
@@ -172,9 +173,31 @@ export function useLogParser(): UseLogParser {
 
     void (async () => {
       try {
-        const head = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
+        const headBuf = await file.slice(0, 4096).arrayBuffer();
         if (isStale()) return;
-        const { encoding } = detectEncoding(head);
+        const { encoding } = detectEncoding(new Uint8Array(headBuf));
+
+        // Network-artifact adapters (ARP, TShark…) get first refusal: sniff the
+        // decoded head, and if one claims the format, parse via it. Adapters are
+        // line-based, so this path reads the whole file (no worker streaming).
+        const adapter = detectAdapter(decodeBytes(headBuf, encoding));
+        if (adapter) {
+          const text = decodeBytes(await file.arrayBuffer(), encoding);
+          if (isStale()) return;
+          const result = adapter.parse(text, { maxRows: MAX_ROWS });
+          if (result.rows.length > 0) {
+            const dataset = assembleDataset(result.headers, result.rows, {
+              fileName: file.name,
+              fileSize: file.size,
+              delimiter: '',
+              truncated: result.truncated,
+              encoding,
+            });
+            if (!isStale()) dispatch({ type: 'SUCCESS', dataset, errors });
+            return; // else fall through to the CSV parser
+          }
+        }
+
         if (encoding === 'utf-8') {
           streamUtf8();
         } else {

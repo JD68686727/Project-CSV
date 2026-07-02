@@ -1,0 +1,5 @@
+gateway.local (10.0.0.1) at 00:1a:2b:3c:4d:5e [ether] on eth0
+? (10.0.0.5) at <incomplete> on eth0
+workstation-7 (10.0.0.7) at 00:1a:2b:3c:4d:99 [ether] on eth0
+printer (10.0.0.21) at 00:1a:2b:aa:bb:cc [ether] on eth0
+nas (10.0.0.42) at 00:1a:2b:de:ad:be [ether] on eth1

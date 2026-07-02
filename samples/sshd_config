@@ -1,0 +1,9 @@
+# Example sshd_config for auditing
+Port 22
+Protocol 2
+PermitRootLogin yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+X11Forwarding no
+ChallengeResponseAuthentication no
+UsePAM yes

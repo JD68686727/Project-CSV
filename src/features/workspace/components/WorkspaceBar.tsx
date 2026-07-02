@@ -15,6 +15,8 @@ export interface WorkspaceBarProps {
   onAddFile: (file: File) => void;
   /** Opens the custom-log pattern builder. */
   onCustomLog?: () => void;
+  /** Opens the config hardening audit. */
+  onAuditConfig?: () => void;
 }
 
 const MODES: { value: WorkspaceMode; label: string }[] = [
@@ -33,6 +35,7 @@ export function WorkspaceBar({
   onRemove,
   onAddFile,
   onCustomLog,
+  onAuditConfig,
 }: WorkspaceBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -123,6 +126,16 @@ export function WorkspaceBar({
             className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
           >
             + Custom log
+          </button>
+        )}
+
+        {onAuditConfig && (
+          <button
+            type="button"
+            onClick={onAuditConfig}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-500 hover:border-brand-400 hover:text-brand-600 dark:border-slate-600 dark:text-slate-400 dark:hover:text-brand-400"
+          >
+            + Audit config
           </button>
         )}
       </div>
