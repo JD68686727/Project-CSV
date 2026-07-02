@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { parseSpaceKv, parseIniKv, detectSyntax } from './parse';
+import {
+  parseSpaceKv,
+  parseIniKv,
+  parseNginx,
+  parseCiscoIos,
+  detectSyntax,
+} from './parse';
 import { auditConfig, auditConfigText } from './audit';
-import { SSH_RULES } from './rules';
+import { SSH_RULES, NGINX_RULES, CISCO_RULES } from './rules';
 
 const SSHD = `# Managed by Ansible
 Port 22
@@ -70,5 +76,92 @@ describe('auditConfigText', () => {
     expect(res.syntax).toBe('ssh');
     expect(res.entryCount).toBe(5);
     expect(res.findings.length).toBeGreaterThan(0);
+  });
+});
+
+const NGINX = `server {
+    listen 443 ssl;
+    server_name example.com;
+    server_tokens on;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    autoindex on;
+    location / {
+        proxy_pass http://app;
+    }
+}`;
+
+describe('nginx dialect', () => {
+  it('parses directives, stripping braces and trailing semicolons', () => {
+    const byKey = Object.fromEntries(
+      parseNginx(NGINX).map((e) => [e.key, e.value]),
+    );
+    expect(byKey.server_tokens).toBe('on');
+    expect(byKey.listen).toBe('443 ssl');
+    expect(byKey.server).toBe(''); // block opener, brace stripped
+  });
+
+  it('detects nginx by filename or content', () => {
+    expect(detectSyntax('nginx.conf', NGINX)).toBe('nginx');
+    expect(detectSyntax('default.conf', NGINX)).toBe('nginx');
+  });
+
+  it('flags server_tokens, autoindex, weak TLS and missing HSTS', () => {
+    const ids = auditConfig(parseNginx(NGINX), NGINX_RULES).map((f) => f.rule);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'nginx-server-tokens',
+        'nginx-autoindex',
+        'nginx-weak-tls',
+        'nginx-hsts-missing',
+      ]),
+    );
+  });
+
+  it('does not flag TLSv1.2/1.3-only as weak', () => {
+    const clean = 'server {\nssl_protocols TLSv1.2 TLSv1.3;\nadd_header Strict-Transport-Security "max-age=1" always;\n}';
+    const ids = auditConfig(parseNginx(clean), NGINX_RULES).map((f) => f.rule);
+    expect(ids).not.toContain('nginx-weak-tls');
+    expect(ids).not.toContain('nginx-hsts-missing');
+  });
+});
+
+const CISCO = `!
+hostname edge-router
+!
+enable password cisco
+no service password-encryption
+!
+line vty 0 4
+ transport input telnet
+!
+snmp-server community public RO
+ip http server
+!
+end`;
+
+describe('cisco IOS dialect', () => {
+  it('parses lines and skips ! comments, preserving raw indentation', () => {
+    const entries = parseCiscoIos(CISCO);
+    const transport = entries.find((e) => e.raw.includes('transport input'));
+    expect(transport?.raw).toBe(' transport input telnet'); // leading space kept
+    expect(entries.some((e) => e.raw.startsWith('!'))).toBe(false);
+  });
+
+  it('detects cisco by filename or content', () => {
+    expect(detectSyntax('running-config.txt', CISCO)).toBe('cisco');
+    expect(detectSyntax('switch.cfg', 'enable secret 5 xyz')).toBe('cisco');
+  });
+
+  it('flags telnet, weak enable password, SNMP default, http server', () => {
+    const ids = auditConfig(parseCiscoIos(CISCO), CISCO_RULES).map((f) => f.rule);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'cisco-enable-password',
+        'cisco-no-password-encryption',
+        'cisco-telnet-vty',
+        'cisco-snmp-default-community',
+        'cisco-http-server',
+      ]),
+    );
   });
 });
